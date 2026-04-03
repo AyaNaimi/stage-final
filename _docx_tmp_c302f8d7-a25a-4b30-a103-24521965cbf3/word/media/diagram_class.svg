@@ -1,0 +1,41 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900">
+  <defs>
+    <style>
+      .box { fill: #FFFFFF; stroke: #0B2545; stroke-width: 2; }
+      .title { fill: #0B2545; font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; }
+      .text { fill: #050F1E; font-family: Arial, sans-serif; font-size: 16px; }
+      .line { stroke: #006D5B; stroke-width: 2; }
+    </style>
+  </defs>
+  <rect width="1400" height="900" fill="#F7F8FA"/>
+  <rect class="box" x="80" y="80" width="260" height="140"/>
+  <text class="title" x="100" y="110">Employe</text>
+  <text class="text" x="100" y="140">id, matricule, nom...</text>
+  <rect class="box" x="420" y="80" width="260" height="140"/>
+  <text class="title" x="440" y="110">DossierMedical</text>
+  <text class="text" x="440" y="140">employe_id, groupe_sanguin...</text>
+  <rect class="box" x="760" y="80" width="260" height="140"/>
+  <text class="title" x="780" y="110">Visite</text>
+  <text class="text" x="780" y="140">date, type, statut...</text>
+  <rect class="box" x="80" y="300" width="260" height="140"/>
+  <text class="title" x="100" y="330">ExamenMedical</text>
+  <text class="text" x="100" y="360">visite_id, employe_id...</text>
+  <rect class="box" x="420" y="300" width="260" height="140"/>
+  <text class="title" x="440" y="330">MedicalRestriction</text>
+  <text class="text" x="440" y="360">examen_medical_id...</text>
+  <rect class="box" x="760" y="300" width="260" height="140"/>
+  <text class="title" x="780" y="330">MedicalDocument</text>
+  <text class="text" x="780" y="360">examen_medical_id...</text>
+  <rect class="box" x="1080" y="80" width="260" height="140"/>
+  <text class="title" x="1100" y="110">SSTPractitioner</text>
+  <text class="text" x="1100" y="140">name, specialty...</text>
+  <rect class="box" x="1080" y="300" width="260" height="140"/>
+  <text class="title" x="1100" y="330">SSTPayment</text>
+  <text class="text" x="1100" y="360">practitioner_id, amount...</text>
+  <line class="line" x1="340" y1="150" x2="420" y2="150"/>
+  <line class="line" x1="680" y1="150" x2="760" y2="150"/>
+  <line class="line" x1="210" y1="220" x2="210" y2="300"/>
+  <line class="line" x1="550" y1="220" x2="550" y2="300"/>
+  <line class="line" x1="890" y1="220" x2="890" y2="300"/>
+  <line class="line" x1="1180" y1="220" x2="1180" y2="300"/>
+</svg>

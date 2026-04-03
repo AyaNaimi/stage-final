@@ -1,0 +1,36 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900">
+  <defs>
+    <style>
+      .bg { fill: #F7F8FA; }
+      .text { fill: #050F1E; font-family: Arial, sans-serif; font-size: 16px; }
+      .line { stroke: #0B2545; stroke-width: 2; }
+      .lifeline { stroke: #006D5B; stroke-width: 2; stroke-dasharray: 6 6; }
+      .box { fill: #FFFFFF; stroke: #0B2545; stroke-width: 2; }
+    </style>
+  </defs>
+  <rect class="bg" x="0" y="0" width="1400" height="900"/>
+  <text class="text" x="80" y="80">Frontend</text>
+  <text class="text" x="280" y="80">API</text>
+  <text class="text" x="420" y="80">Controller</text>
+  <text class="text" x="620" y="80">FormRequest</text>
+  <text class="text" x="840" y="80">Model/Service</text>
+  <text class="text" x="1080" y="80">Database</text>
+  <line class="lifeline" x1="100" y1="100" x2="100" y2="820"/>
+  <line class="lifeline" x1="300" y1="100" x2="300" y2="820"/>
+  <line class="lifeline" x1="460" y1="100" x2="460" y2="820"/>
+  <line class="lifeline" x1="660" y1="100" x2="660" y2="820"/>
+  <line class="lifeline" x1="900" y1="100" x2="900" y2="820"/>
+  <line class="lifeline" x1="1120" y1="100" x2="1120" y2="820"/>
+  <line class="line" x1="100" y1="150" x2="300" y2="150"/>
+  <text class="text" x="120" y="140">POST /visites</text>
+  <line class="line" x1="300" y1="220" x2="460" y2="220"/>
+  <text class="text" x="320" y="210">VisiteController@store</text>
+  <line class="line" x1="460" y1="290" x2="660" y2="290"/>
+  <text class="text" x="480" y="280">Validation</text>
+  <line class="line" x1="660" y1="360" x2="900" y2="360"/>
+  <text class="text" x="680" y="350">Persist (Eloquent)</text>
+  <line class="line" x1="900" y1="430" x2="1120" y2="430"/>
+  <text class="text" x="920" y="420">INSERT</text>
+  <line class="line" x1="1120" y1="500" x2="100" y2="500"/>
+  <text class="text" x="120" y="490">Response JSON</text>
+</svg>

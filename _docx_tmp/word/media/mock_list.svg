@@ -1,0 +1,29 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900">
+  <defs>
+    <style>
+      .bg { fill: #F7F8FA; }
+      .panel { fill: #FFFFFF; stroke: #E1E6EE; stroke-width: 2; }
+      .nav { fill: #0B2545; }
+      .title { fill: #050F1E; font-family: Arial, sans-serif; font-size: 24px; }
+      .row { fill: #FFFFFF; }
+      .rowAlt { fill: #F7F8FA; }
+      .header { fill: #0B2545; }
+      .text { fill: #FFFFFF; font-family: Arial, sans-serif; font-size: 18px; }
+      .cell { fill: #050F1E; font-family: Arial, sans-serif; font-size: 18px; }
+    </style>
+  </defs>
+  <rect class="bg" x="0" y="0" width="1400" height="900"/>
+  <rect class="nav" x="0" y="0" width="260" height="900"/>
+  <rect class="panel" x="300" y="40" width="1060" height="820" rx="14"/>
+  <text class="title" x="330" y="90">Liste des Visites</text>
+  <rect class="header" x="330" y="130" width="1000" height="50"/>
+  <text class="text" x="350" y="164">Employé</text>
+  <text class="text" x="650" y="164">Date</text>
+  <text class="text" x="820" y="164">Statut</text>
+  <text class="text" x="1000" y="164">Praticien</text>
+  <rect class="row" x="330" y="180" width="1000" height="60"/>
+  <rect class="rowAlt" x="330" y="240" width="1000" height="60"/>
+  <rect class="row" x="330" y="300" width="1000" height="60"/>
+  <rect class="rowAlt" x="330" y="360" width="1000" height="60"/>
+  <text class="cell" x="350" y="220">...</text>
+</svg>

@@ -1,0 +1,23 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900">
+  <defs>
+    <style>
+      .bg { fill: #F7F8FA; }
+      .card { fill: #FFFFFF; stroke: #E1E6EE; stroke-width: 2; }
+      .nav { fill: #0B2545; }
+      .accent { fill: #006D5B; }
+      .text { fill: #050F1E; font-family: Arial, sans-serif; font-size: 22px; }
+      .label { fill: #B8922A; font-family: Arial, sans-serif; font-size: 18px; }
+      .muted { fill: #6B7788; font-family: Arial, sans-serif; font-size: 18px; }
+    </style>
+  </defs>
+  <rect class="bg" x="0" y="0" width="1400" height="900"/>
+  <rect class="nav" x="0" y="0" width="260" height="900"/>
+  <rect class="card" x="300" y="40" width="1060" height="120" rx="14"/>
+  <rect class="card" x="300" y="190" width="500" height="280" rx="14"/>
+  <rect class="card" x="860" y="190" width="500" height="280" rx="14"/>
+  <rect class="card" x="300" y="500" width="1060" height="340" rx="14"/>
+  <text class="text" x="320" y="110">Med-HR • Tableau de bord SST</text>
+  <text class="label" x="320" y="235">Indicateurs clés</text>
+  <text class="label" x="880" y="235">Visites planifiées</text>
+  <text class="label" x="320" y="545">Historique médical</text>
+</svg>

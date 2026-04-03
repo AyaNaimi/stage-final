@@ -1,0 +1,20 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900">
+  <defs>
+    <style>
+      .bg { fill: #0B2545; }
+      .panel { fill: #FFFFFF; }
+      .title { fill: #0B2545; font-family: Arial, sans-serif; font-size: 28px; }
+      .label { fill: #6B7788; font-family: Arial, sans-serif; font-size: 18px; }
+      .accent { fill: #006D5B; }
+    </style>
+  </defs>
+  <rect class="bg" x="0" y="0" width="1400" height="900"/>
+  <rect class="panel" x="420" y="160" width="560" height="580" rx="18"/>
+  <text class="title" x="480" y="230">Connexion • Med-HR</text>
+  <rect x="480" y="280" width="440" height="60" rx="8" fill="#F7F8FA"/>
+  <text class="label" x="500" y="318">Email</text>
+  <rect x="480" y="370" width="440" height="60" rx="8" fill="#F7F8FA"/>
+  <text class="label" x="500" y="408">Mot de passe</text>
+  <rect class="accent" x="480" y="470" width="440" height="60" rx="10"/>
+  <text class="label" x="650" y="510" fill="#FFFFFF">Se connecter</text>
+</svg>

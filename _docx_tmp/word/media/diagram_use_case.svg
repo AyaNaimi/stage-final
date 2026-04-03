@@ -1,0 +1,32 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900">
+  <defs>
+    <style>
+      .bg { fill: #F7F8FA; }
+      .box { fill: #FFFFFF; stroke: #0B2545; stroke-width: 2; }
+      .text { fill: #050F1E; font-family: Arial, sans-serif; font-size: 18px; }
+      .actor { fill: #006D5B; font-family: Arial, sans-serif; font-size: 20px; }
+      .line { stroke: #0B2545; stroke-width: 2; }
+    </style>
+  </defs>
+  <rect class="bg" x="0" y="0" width="1400" height="900"/>
+  <text class="actor" x="60" y="120">Responsable RH</text>
+  <text class="actor" x="60" y="220">Praticien</text>
+  <text class="actor" x="60" y="320">Employé</text>
+  <rect class="box" x="300" y="60" width="1000" height="760" rx="18"/>
+  <text class="text" x="340" y="110">Module SST</text>
+  <ellipse cx="520" cy="200" rx="170" ry="35" fill="#FFFFFF" stroke="#0B2545" stroke-width="2"/>
+  <text class="text" x="430" y="206">Gérer dossiers médicaux</text>
+  <ellipse cx="520" cy="300" rx="170" ry="35" fill="#FFFFFF" stroke="#0B2545" stroke-width="2"/>
+  <text class="text" x="430" y="306">Planifier visites</text>
+  <ellipse cx="520" cy="400" rx="170" ry="35" fill="#FFFFFF" stroke="#0B2545" stroke-width="2"/>
+  <text class="text" x="430" y="406">Saisir examens</text>
+  <ellipse cx="520" cy="500" rx="170" ry="35" fill="#FFFFFF" stroke="#0B2545" stroke-width="2"/>
+  <text class="text" x="430" y="506">Gérer restrictions</text>
+  <ellipse cx="520" cy="600" rx="170" ry="35" fill="#FFFFFF" stroke="#0B2545" stroke-width="2"/>
+  <text class="text" x="430" y="606">Gérer paiements</text>
+  <line class="line" x1="200" y1="120" x2="350" y2="200"/>
+  <line class="line" x1="200" y1="120" x2="350" y2="300"/>
+  <line class="line" x1="200" y1="120" x2="350" y2="400"/>
+  <line class="line" x1="200" y1="120" x2="350" y2="500"/>
+  <line class="line" x1="200" y1="120" x2="350" y2="600"/>
+</svg>

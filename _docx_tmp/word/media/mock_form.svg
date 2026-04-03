@@ -1,0 +1,26 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900">
+  <defs>
+    <style>
+      .bg { fill: #F7F8FA; }
+      .panel { fill: #FFFFFF; stroke: #E1E6EE; stroke-width: 2; }
+      .nav { fill: #0B2545; }
+      .title { fill: #050F1E; font-family: Arial, sans-serif; font-size: 24px; }
+      .label { fill: #6B7788; font-family: Arial, sans-serif; font-size: 18px; }
+      .accent { fill: #006D5B; }
+    </style>
+  </defs>
+  <rect class="bg" x="0" y="0" width="1400" height="900"/>
+  <rect class="nav" x="0" y="0" width="260" height="900"/>
+  <rect class="panel" x="300" y="40" width="1060" height="820" rx="14"/>
+  <text class="title" x="330" y="90">Création d'une Visite Médicale</text>
+  <rect class="panel" x="330" y="130" width="1000" height="70" rx="8"/>
+  <text class="label" x="350" y="175">Employé</text>
+  <rect class="panel" x="330" y="230" width="480" height="70" rx="8"/>
+  <text class="label" x="350" y="275">Date</text>
+  <rect class="panel" x="850" y="230" width="480" height="70" rx="8"/>
+  <text class="label" x="870" y="275">Type</text>
+  <rect class="panel" x="330" y="330" width="1000" height="220" rx="8"/>
+  <text class="label" x="350" y="370">Notes / Motif</text>
+  <rect class="accent" x="1080" y="770" width="250" height="60" rx="10"/>
+  <text class="label" x="1125" y="810" fill="#FFFFFF">Enregistrer</text>
+</svg>

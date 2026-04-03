@@ -1,0 +1,37 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        if (Schema::hasTable('gp_bultin_models')) {
+            Schema::table('gp_bultin_models', function (Blueprint $table) {
+                if (!Schema::hasColumn('gp_bultin_models', 'photo')) {
+                    $table->string('photo')->nullable();
+                }
+            });
+        } else {
+            Schema::create('gp_bultin_models', function (Blueprint $table) {
+                $table->id();
+                $table->string('photo')->nullable();
+                $table->string('designation');
+                $table->timestamps();
+            });
+        }
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('gp_bultin_models');
+    }
+};

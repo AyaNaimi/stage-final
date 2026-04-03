@@ -1,0 +1,35 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900">
+  <defs>
+    <style>
+      .bg { fill: #F7F8FA; }
+      .box { fill: #FFFFFF; stroke: #0B2545; stroke-width: 2; }
+      .title { fill: #0B2545; font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; }
+      .text { fill: #050F1E; font-family: Arial, sans-serif; font-size: 16px; }
+      .line { stroke: #006D5B; stroke-width: 2; }
+    </style>
+  </defs>
+  <rect class="bg" x="0" y="0" width="1400" height="900"/>
+  <rect class="box" x="80" y="80" width="260" height="120"/>
+  <text class="title" x="100" y="110">employes</text>
+  <text class="text" x="100" y="140">id (PK)</text>
+  <rect class="box" x="420" y="80" width="260" height="120"/>
+  <text class="title" x="440" y="110">dossier_medicals</text>
+  <text class="text" x="440" y="140">employe_id (FK)</text>
+  <rect class="box" x="760" y="80" width="260" height="120"/>
+  <text class="title" x="780" y="110">visites</text>
+  <text class="text" x="780" y="140">practitioner_id (FK)</text>
+  <rect class="box" x="80" y="260" width="260" height="120"/>
+  <text class="title" x="100" y="290">examen_medicals</text>
+  <text class="text" x="100" y="320">visite_id (FK)</text>
+  <rect class="box" x="420" y="260" width="260" height="120"/>
+  <text class="title" x="440" y="290">medical_restrictions</text>
+  <text class="text" x="440" y="320">examen_medical_id (FK)</text>
+  <rect class="box" x="760" y="260" width="260" height="120"/>
+  <text class="title" x="780" y="290">medical_documents</text>
+  <text class="text" x="780" y="320">examen_medical_id (FK)</text>
+  <rect class="box" x="1080" y="80" width="260" height="120"/>
+  <text class="title" x="1100" y="110">sst_practitioners</text>
+  <rect class="box" x="1080" y="260" width="260" height="120"/>
+  <text class="title" x="1100" y="290">sst_payments</text>
+  <text class="text" x="1100" y="320">practitioner_id (FK)</text>
+</svg>

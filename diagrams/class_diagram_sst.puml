@@ -1,0 +1,97 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+class Employe {
+    +int id
+    +String matricule
+    +String nom
+    +String prenom
+    +Date date_naiss
+    +String cin
+    +float salaire_base
+}
+
+class DossierMedical {
+    +int id
+    +String numero_dossier
+    +String groupe_sanguin
+    +String antecedents_personnels
+    +String vaccinations
+    +String notes
+}
+
+class Visite {
+    +int id
+    +Date date
+    +String time
+    +String type
+    +String statut
+    +String lieu
+    +float unit_cost
+    +float total_cost
+}
+
+class ExamenMedical {
+    +int id
+    +Date date_examen
+    +String motif
+    +float poids
+    +float taille
+    +float imc
+    +String ta_systolique
+    +String ta_diastolique
+    +String pouls
+    +String aptitude
+    +String evaluation
+    +Date date_prochaine_visite
+}
+
+class MedicalRestriction {
+    +int id
+    +String description
+    +Date date_debut
+    +Date date_fin
+    +boolean est_permanent
+    +String statut
+}
+
+class MedicalDocument {
+    +int id
+    +String nom
+    +String type
+    +String chemin_fichier
+}
+
+class SSTPractitioner {
+    +int id
+    +String name
+    +String specialty
+    +String phone
+    +float remuneration_amount
+    +String status
+}
+
+class SSTPayment {
+    +int id
+    +float amount
+    +String reference
+    +String status
+    +Date payment_date
+}
+
+' Relations
+Employe "1" *-- "1" DossierMedical : Possède
+Employe "1" *-- "0..*" Visite : Participe
+Employe "1" *-- "0..*" ExamenMedical : Passe
+Employe "1" *-- "0..*" MedicalRestriction : Subit
+Employe "1" *-- "0..*" MedicalDocument : Possède
+
+Visite "1" *-- "0..*" ExamenMedical : Génère
+ExamenMedical "1" *-- "0..*" MedicalRestriction : Déclenche
+ExamenMedical "1" *-- "0..*" MedicalDocument : Justifie
+
+SSTPractitioner "1" o-- "0..*" Visite : Supervise
+SSTPractitioner "1" o-- "0..*" SSTPayment : Reçoit
+Visite "*" -- "*" SSTPayment : Rapprochement (m:n)
+
+@enduml

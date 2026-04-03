@@ -1,0 +1,29 @@
+@startuml
+autonumber
+actor "Responsable RH" as RH
+participant "Interface Web (React/Vite)" as UI
+participant "API Laravel" as API
+participant "VisiteController" as Ctrl
+participant "Visite Model" as Model
+database "PostgreSQL" as DB
+
+RH -> UI : Soumettre les résultats de la visite
+UI -> API : POST /api/visites (JSON Payload)
+activate API
+API -> Ctrl : store(Request $request)
+activate Ctrl
+Ctrl -> Ctrl : validate($data)
+Ctrl -> Model : create($validatedData)
+activate Model
+Model -> DB : INSERT INTO visites (...)
+activate DB
+DB --[#black]> Model : Returns ID
+deactivate DB
+Model --[#black]> Ctrl : Object Instance
+deactivate Model
+Ctrl --[#black]> API : Response (JSON, 201 Created)
+deactivate Ctrl
+API --[#black]> UI : { id, message: "Visite enregistrée" }
+deactivate API
+UI -> RH : Afficher confirmation (Toast notification)
+@enduml

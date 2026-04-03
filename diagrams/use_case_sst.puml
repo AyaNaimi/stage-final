@@ -1,0 +1,35 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Responsable RH / Admin" as RH
+actor "Employé" as Emp
+actor "Praticien SST" as Doc
+
+rectangle "Module SST (Med-HR)" {
+    usecase "Gérer Dossiers Médicaux" as UC1
+    usecase "Planifier Visites Médicales" as UC2
+    usecase "Saisir Examens Médicaux" as UC3
+    usecase "Gérer Restrictions d'Aptitude" as UC4
+    usecase "Gérer Praticiens SST" as UC5
+    usecase "Payer Prestataires SST" as UC6
+    usecase "Consulter son dossier (Optionnel)" as UC7
+}
+
+RH --> UC1
+RH --> UC2
+RH --> UC3
+RH --> UC4
+RH --> UC5
+RH --> UC6
+
+Emp -- UC7
+Doc -- UC3 : Participe
+
+note right of UC3
+  Inclus la saisie des
+  constantes vitales
+  (Tension, Poids, etc.)
+end note
+
+@enduml

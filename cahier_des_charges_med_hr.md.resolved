@@ -1,0 +1,130 @@
+# Cahier des Charges : Projet Med-HR (ERP RH & SST)
+
+> **Document édité dans le cadre d'un stage de fin d'études / Projet professionnel**
+
+---
+
+## 1. Contexte du Projet et Présentation du Stage
+
+### 1.1 Cadre du Projet
+Le présent document définit les spécifications techniques et fonctionnelles du projet **Med-HR**, un système d'information de type ERP (Enterprise Resource Planning) développé dans le cadre d'un stage.
+L'objectif central de ce stage est de concevoir, développer et déployer une solution logicielle modulaire capable de centraliser la gestion des Ressources Humaines (RH) et, plus spécifiquement, le pilotage de la Santé et Sécurité au Travail (SST).
+
+### 1.2 Problématique
+Les entreprises peinent souvent à lier la gestion administrative classique de leurs employés (congés, paie, contrats) avec le suivi médical obligatoire (visites médicales, restrictions d'aptitude, facturation des médecins du travail). Les données sont souvent silotées (fichiers Excel, dossiers papiers cliniques), entraînant des pertes d'information, des défauts de conformité légale et des difficultés de reporting.
+
+### 1.3 Objectifs de la Solution
+- **Centraliser** les données collaborateurs (Dossiers RH et Dossiers Médicaux).
+- **Informatiser et outiller** le service RH pour le pilotage complet de la santé au travail.
+- **Assurer la traçabilité** des examens vitaux, des aptitudes et des restrictions médicales.
+- **Automatiser** la gestion de la facturation des praticiens SST externes.
+- **Garantir la sécurité** et la confidentialité des données médicales.
+
+---
+
+## 2. Périmètre et Acteurs du Système
+
+### 2.1 Périmètre d'Application
+Le système couvrira deux grands pôles :
+1. **Pôle Prioritaire (SST)** : Création et Suivi des dossiers médicaux, planification des visites, saisie des bilans de santé, gestion des aptitudes et honoraires des médecins prestataires.
+2. **Pôle Secondaire (Core RH & Paie, Système Existant)** : Module préalable sur lequel s'appuie le projet (gestion administrative des employés, congés), servant de pilier pour l'interfaçage avec le nouveau module SST.
+
+### 2.2 Utilisateurs (Acteurs)
+Dans la version actuelle du système, **l'acteur central est le Responsable RH (ou Administrateur)**.
+C'est lui qui orchestre le système :
+* **Le Service RH** : Planifie les visites médicales, réceptionne les conclusions des médecins (aptitudes/restrictions limitées au strict volet professionnel) et met à jour le dossier numérique. Il valide également le paiement des prestataires.
+**(Note : Selon les futures évolutions post-stage, un portail "Médecin" ou "Praticien SST" pourrait être ouvert pour une saisie directe en clinique, mais actuellement la modélisation UML place la RH en opérateur de saisie principal).*
+
+---
+
+## 3. Spécifications Fonctionnelles
+
+### 3.1 Module 1 : Santé et Sécurité au Travail (SST) - [Prioritaire]
+Ce module est le cœur de l'application conçue durant le stage.
+
+#### 3.1.1 Gestion des Dossiers Médicaux ([DossierMedical](file:///c:/Users/ayana/OneDrive/Desktop/med_hr/GestionBE/app/Models/DossierMedical.php#8-28))
+* Le système doit permettre de créer un dossier médical unique par employé lors de l'embauche.
+* Le système doit stocker les antécédents médicaux (personnels et familiaux), le groupe sanguin, les allergies et le statut vaccinal.
+
+#### 3.1.2 Gestion du Corps Médical ([SSTPractitioner](file:///c:/Users/ayana/OneDrive/Desktop/med_hr/GestionBE/app/Models/SSTPractitioner.php#8-46))
+* Le système doit permettre d'ajouter, modifier et archiver des praticiens externes ou internes (Médecins du travail, infirmiers...).
+* Chaque praticien doit avoir une fiche détaillée (Nom, spécialité, contact, diplôme, type de contrat de prestation et rémunération conventionnelle).
+
+#### 3.1.3 Planification et Suivi des Visites Médicales ([Visite](file:///c:/Users/ayana/OneDrive/Desktop/med_hr/GestionBE/app/Models/Visite.php#8-50))
+* Le RH doit pouvoir planifier une visite (date, heure, praticien, lieu, motif).
+* Le système doit tracer le statut de la visite (planifiée, en cours, terminée, absence).
+* Gestion des absences : Si le collaborateur est absent, la visite doit pouvoir être annulée et reprogrammée.
+
+#### 3.1.4 Bilan de Consultations et Examens ([ExamenMedical](file:///c:/Users/ayana/OneDrive/Desktop/med_hr/GestionBE/app/Models/ExamenMedical.php#8-60))
+* Suite à une visite, le RH doit saisir le bilan consolidé.
+* **Constantes vitales** : Poids, taille, IMC, tension artérielle (systolique/diastolique), pouls, température, glycémie, SpO2.
+* **Conclusion d'Aptitude** : L'employé doit être déclaré "Apte" ou "Inapte".
+* Le système doit permettre de joindre des fichiers numérisés (PDF, Scans de radios) via l'entité [MedicalDocument](file:///c:/Users/ayana/OneDrive/Desktop/med_hr/GestionBE/app/Models/MedicalDocument.php#8-31).
+
+#### 3.1.5 Gestion des Restrictions d'Aptitude ([MedicalRestriction](file:///c:/Users/ayana/OneDrive/Desktop/med_hr/GestionBE/app/Models/MedicalRestriction.php#8-32))
+* Si un employé est déclaré "Inapte" ou avec des contraintes, le système doit générer une restriction d'aptitude.
+* Une restriction doit contenir une description, une période de validité (date de début / fin) et un marqueur permanent ou non.
+
+#### 3.1.6 Facturation des Prestataires ([SSTPayment](file:///c:/Users/ayana/OneDrive/Desktop/med_hr/GestionBE/app/Models/SSTPayment.php#8-33))
+* Le système doit évaluer le coût des visites médicales (Total Cost).
+* Le RH doit pouvoir saisir des versements (Acomptes ou Soldes) liés à un praticien ([SSTPayment](file:///c:/Users/ayana/OneDrive/Desktop/med_hr/GestionBE/app/Models/SSTPayment.php#8-33)) en y attachant la référence de facture.
+* Le système consolide l'état de facturation de chaque visite (Non payé, Paiement partiel, Réglé intégralement).
+
+---
+
+### 3.2 Analyse de l'Existant : Module Core Ressources Humaines (RH)
+*Ce module était déjà présent dans l'architecture de l'entreprise. La mission a consisté à l'analyser pour assurer l'interfaçage des nouvelles données médicales avec le socle employé pré-établi.*
+
+#### 3.2.1 Gestion du Personnel Existant ([Employe](file:///c:/Users/ayana/OneDrive/Desktop/med_hr/GestionBE/app/Models/Employe.php#13-168) & `Contrat`)
+* Données de base centralisées des employés (Matricule, CNSS, CIN, affectation départementale).
+* Point d'ancrage principal via la clé `employe_id` pour toutes les données médicales liées.
+
+#### 3.2.2 Gestion des Absences & Congés Existant (`GpDemandeConge`)
+* Suivi des compteurs de droits aux congés (`GpConge`).
+* L'expertise s'est concentrée sur l'impact potentiel des jours d'arrêt de travail médical sur ce calendrier.
+
+#### 3.2.3 Base Module de Paie Existant (`GpEmployeBulletin`)
+* Génération de bulletins de salaire mensuels associés à l'employé.
+* Prise en compte des retenues (absences médicales) pour calculer le net à payer.
+
+---
+
+## 4. Spécifications Techniques
+
+### 4.1 Architecture du Système
+Le projet repose sur une architecture moderne de type **Client-Serveur (API REST)** :
+* **Backend (API)** : Développement en **PHP** reposant sur le framework **Laravel**.
+    * ORM : Eloquent (Modèles de données).
+    * Routes : API JSON strictes pour permettre une évolutivité aisée.
+* **Frontend (Client)** : Développement en **JavaScript/TypeScript** avec un écosystème réactif (React, Vue.js ou Next.js selon la stack front définie) basé sur l'outil de build `Vite`.
+* **Base de Données** : Système de Gestion de Base de Données Relationnelle (MySQL, MariaDB ou PostgreSQL).
+
+### 4.2 Exigences Non Fonctionnelles
+
+#### 4.2.1 Sécurité et Confidentialité Data
+S'agissant de la conservation de **données médicales à caractère personnel**, le système doit garantir :
+* **Chiffrement** : Les mots de passe et tokens d'API doivent être hachés.
+* **Autorisations** : Mise en place de middlewares/Gardians pour garantir que seuls les RH/Admins accèdent aux données cliniques sensibles.
+* **Protection des fichiers** (storage/app) : Les documents d'examen scannés ([MedicalDocument](file:///c:/Users/ayana/OneDrive/Desktop/med_hr/GestionBE/app/Models/MedicalDocument.php#8-31)) ne doivent pas être publiquement exposés par le serveur web, mais protégés via un contrôleur de téléchargement authentifié.
+
+#### 4.2.2 Performance et Ergonomie
+* L'interface Frontend devra adopter un design "Single Page Application" (SPA) pour la fluidité (pas de rechargement réseau complet).
+* Le code Backend devra utiliser les relations logiques (Eager Loading -> `with('employe', 'examenMedical')`) pour éviter les soucis de performances dit "N+1 query problem" de Laravel.
+
+#### 4.2.3 Livrables du Stage
+L'étudiant s'engage à fournir en fin de cycle :
+1. Le code source sur un dépôt versionné (Git/GitHub).
+2. Le Modèle UML d'Analyse (Use cases, Diagrammes de Séquence, de Classes).
+3. Le présent Cahier des Charges.
+4. Une base de données amorcée (Seeds & Migrations) pour démonstration de soutenance.
+
+---
+
+## 5. Planning Prévisionnel (Méthodologie Agile/Scrum)
+
+Pour la bonne conduite du stage, le développement s'organise en plusieurs Sprints d'implémentation :
+* **Sprint 1** : Modélisation UML, création des Migrations Laravel, et mise en place de la structure (Models/Controllers).
+* **Sprint 2** : Prise en main et analyse du moteur Core RH existant (Employés, Départements, Contrats) pour l'interfaçage de base de données.
+* **Sprint 3 (Focus Phase)** : Développement API du module SST (Praticiens, Visites, Dossiers médicaux).
+* **Sprint 4** : Implémentation fonctionnelle des processus complexes (Paiements, Examens, Restrictions).
+* **Sprint 5** : Câblage Frontend, Tests complets, optimisation des requêtes et rédaction du rapport de stage.

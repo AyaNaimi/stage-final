@@ -1,0 +1,633 @@
+# Analyse UML du Projet Med-HR (Priorité SST)
+
+Le projet **Med-HR** se compose d'un noyau **Santé et Sécurité au Travail (SST)** extrêmement complet (Dossiers médicaux, visites médicales, examens, encaissement SST), solidement adossé à des modules secondaires plus classiques de **Ressources Humaines (RH)** et **Paie**. 
+
+Voici l'analyse UML réorganisée pour mettre en lumière de façon prioritaire les entités et flux du module SST.
+
+---
+
+## 1. Diagramme des Cas d'Utilisation (Focus SST)
+Ce diagramme modélise les interactions entre les acteurs (Employé, RH, Médecin, Admin) en isolant visuellement le cœur métier (SST) des modules transverses (RH/Paie).
+// [MermaidChart: c8ad95b9-8869-4d6a-83fd-d6adbea6961b]
+
+```mermaid
+flowchart LR
+    %% Acteur Unique
+    RH([Responsable RH / Admin])
+
+    %% Système SST
+    subgraph SysSST[🎯 Module Prioritaire : Santé et Sécurité au Travail]
+        direction TB
+        UC5(📁 Saisir les Dossiers Médicaux)
+        UC6(🩺 Planifier les Visites Médicales)
+        UC9(📝 Enregistrer les Aptitudes & Restrictions)
+        UC7(👨‍⚕️ Gérer les Praticiens SST)
+        UC10(💳 Saisir et Suivre la Facturation SST)
+    end
+
+    %% Système RH (Secondaire)
+    subgraph SysRH[🗂️ Modules Transverses : RH & Paie]
+        direction TB
+        UC1(👤 Gérer les profils et pointages)
+        UC2(🏖️ Saisir les demandes de congé)
+        UC3(👥 Gérer contrats et départements)
+        UC4(💰 Générer les Bulletins de Paie)
+    end
+
+    %% Relations (Centralisées sur RH)
+    RH --> UC1
+    RH --> UC2
+    RH --> UC3
+    RH --> UC4
+    
+    RH --> UC5
+    RH --> UC6
+    RH --> UC7
+    RH --> UC9
+    RH --> UC10
+
+    %% Styles CSS pour mermaid
+    classDef actorStyle fill:#2c3e50,stroke:#1a252f,stroke-width:3px,color:#fff,font-weight:bold
+    classDef ucSstStyle fill:#e8f4f8,stroke:#00bcd4,stroke-width:2px,color:#00838f,rx:10px,ry:10px
+    classDef ucRhStyle fill:#f2fdeb,stroke:#4caf50,stroke-width:2px,color:#2e7d32,rx:10px,ry:10px
+    classDef sysSstStyle fill:#e0f7fa,stroke:#0097a7,stroke-width:3px,stroke-dasharray: 5 5
+    classDef sysRhStyle fill:#e8f5e9,stroke:#388e3c,stroke-width:3px,stroke-dasharray: 5 5
+
+    class RH actorStyle
+    class UC5,UC6,UC7,UC9,UC10 ucSstStyle
+    class UC1,UC2,UC3,UC4 ucRhStyle
+    class SysSST sysSstStyle
+    class SysRH sysRhStyle
+```
+
+---
+
+## 2. Diagramme de Classes (Spécifique au Module SST)
+Ce diagramme de classes est **100% focalisé sur le moteur médical**. Il montre les modèles du code existant, leurs fonctions extraites d'Eloquent ORM et des relations UML strictes (Composition, Agrégation).
+
+// [MermaidChart: 4f743592-3293-4975-958c-740b5897f867]
+
+```mermaid
+classDiagram
+    class Model {
+        <<Framework Eloquent Base>>
+        +save()
+        +update()
+        +delete()
+    }
+
+    class Employe {
+        +int id
+        +String matricule
+        +String num_badge
+        +String nom
+        +String prenom
+        +Date date_naiss
+        +String sexe
+        +String cin
+        +String adresse
+        +String email
+        +String tel
+        +float salaire_base
+        +visites()
+        +medicalRecord()
+        +medicalExams()
+        +medicalRestrictions()
+        +medicalDocuments()
+    }
+    
+    class DossierMedical {
+        +int id
+        +String numero_dossier
+        +String groupe_sanguin
+        +String antecedents_personnels
+        +String antecedents_familiaux
+        +String allergies
+        +String vaccinations
+        +String notes
+        +employe()
+    }
+    
+    class Visite {
+        +int id
+        +Date date
+        +String time
+        +String type
+        +String statut
+        +String emplacement
+        +String lieu
+        +String medecin_nom
+        +String doctor
+        +String notes
+        +float unit_cost
+        +float total_cost
+        +String payment_status
+        +practitioner()
+        +employes()
+        +payments()
+        +medicalExams()
+    }
+    
+    class ExamenMedical {
+        +int id
+        +Date date_examen
+        +String motif
+        +float poids
+        +float taille
+        +float imc
+        +String ta_systolique
+        +String ta_diastolique
+        +String pouls
+        +String temperature
+        +String glycemie
+        +String spo2
+        +String aptitude
+        +String evaluation
+        +String plan
+        +Date date_prochaine_visite
+        +String doctor_name
+        +visite()
+        +employe()
+        +restrictions()
+        +documents()
+    }
+    
+    class MedicalRestriction {
+        +int id
+        +String description
+        +Date date_debut
+        +Date date_fin
+        +boolean est_permanent
+        +String statut
+        +employe()
+        +examenMedical()
+    }
+    
+    class MedicalDocument {
+        +int id
+        +String nom
+        +String type
+        +String chemin_fichier
+        +Date date_document
+        +employe()
+        +examenMedical()
+    }
+
+    class SSTPractitioner {
+        +int id
+        +String name
+        +String first_name
+        +String specialty
+        +String type
+        +String phone
+        +String email
+        +String photo
+        +String diplome
+        +String contract_type
+        +float remuneration_amount
+        +String status
+        +visits()
+        +payments()
+    }
+    
+    class SSTPayment {
+        +int id
+        +float amount
+        +String reference
+        +String status
+        +Date payment_date
+        +String notes
+        +practitioner()
+        +visits()
+    }
+
+    Model <|-- Employe : Héritage
+    Model <|-- DossierMedical : Héritage
+    Model <|-- Visite : Héritage
+    Model <|-- ExamenMedical : Héritage
+    Model <|-- MedicalRestriction : Héritage
+    Model <|-- MedicalDocument : Héritage
+    Model <|-- SSTPractitioner : Héritage
+    Model <|-- SSTPayment : Héritage
+
+    %% Relations
+    Employe "1" *-- "1" DossierMedical : Composition
+    Employe "*" -- "*" Visite : Association (pivot employe_visite)
+    Employe "1" *-- "*" ExamenMedical : Composition
+    Employe "1" *-- "*" MedicalRestriction : Composition
+    Employe "1" *-- "*" MedicalDocument : Composition
+    
+    Visite "1" *-- "*" ExamenMedical : Composition
+    ExamenMedical "1" *-- "*" MedicalRestriction : Composition
+    ExamenMedical "1" *-- "*" MedicalDocument : Composition
+    
+    SSTPractitioner "1" o-- "*" Visite : Agrégation
+    SSTPractitioner "1" o-- "*" SSTPayment : Agrégation
+    Visite "*" -- "*" SSTPayment : Association (pivot sst_payment_visit)
+
+    %% Styling 
+    style Employe fill:#4CAF50,stroke:#2E7D32,stroke-width:2px,color:#fff
+    style DossierMedical fill:#E91E63,stroke:#AD1457,stroke-width:2px,color:#fff
+    style Visite fill:#F06292,stroke:#C2185B,stroke-width:2px,color:#fff
+    style ExamenMedical fill:#FFC107,stroke:#FF8F00,stroke-width:2px,color:#000
+    style MedicalRestriction fill:#FF9800,stroke:#E65100,stroke-width:2px,color:#000
+    style MedicalDocument fill:#9C27B0,stroke:#6A1B9A,stroke-width:2px,color:#fff
+    style SSTPractitioner fill:#00BCD4,stroke:#00838F,stroke-width:2px,color:#fff
+    style SSTPayment fill:#8BC34A,stroke:#558B2F,stroke-width:2px,color:#000
+    style Model fill:#ECEFF1,stroke:#90A4AE,stroke-width:2px,stroke-dasharray: 5 5,color:#000
+```
+
+---
+
+## 3. Diagrammes de Séquence (Opérations SST)
+
+### A. Boîte Noire (Visite Médicale & Expertise métier)
+Montre une séquence de type "boîte noire" (depuis le front le comportement métier attendu) sur la prise en charge d'un employé.
+
+// [MermaidChart: 4f743592-3293-4975-958c-740b5897f867]
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor RH as Responsable RH (Admin)
+    participant Sys as 💻 Système Modulaire Med-HR
+
+    rect rgb(234, 242, 248)
+        note right of RH: Étape 1 : Phase Préparatoire
+        RH->>Sys: Demande d'accès au Dossier Médical de l'Employé XYZ
+        Sys-->>RH: Affiche le Dossier (Antécédents, Allergies, Examens et Visites)
+    end
+
+    rect rgb(232, 248, 245)
+        note right of RH: Étape 2 : Saisie du Bilan Médical (Post-Visite)
+        RH->>Sys: Initie un enregistrement de nouvelle "Visite"
+        Sys-->>RH: Affiche le formulaire d'évaluation
+        RH->>Sys: Transcrit les paramètres vitaux et déclare "Aptitude"
+        Sys-->>Sys: Création couplée entités ExamenMedical + Visite (+ Document associé)
+        Sys-->>RH: ✅ Dossier sauvegardé et historisé.
+    end
+```
+
+### B. Boîte Blanche (Technique MVC d'enregistrement de Visite)
+Détaille les requêtes API (Frontend à Backend Base de données) selon un modèle Modèle-Vue-Contrôleur.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor RH as Responsable RH
+    
+    box rgb(253, 235, 208) Frontend PWA
+        participant UI as Interface Web 🖥️
+    end
+    box rgb(212, 239, 223) API Laravel (Backend)
+        participant API as Route /api/visites 🌐
+        participant Ctrl as VisiteController ⚙️
+        participant Model as Modèle Visite 📦
+    end
+    box rgb(235, 222, 240) Base de Données
+        participant DB as Base MySQL/PgSQL 🗄️
+    end
+
+    RH->>UI: Soumettre la Visite via le Formulaire Web
+    UI->>API: HTTP POST Payload JSON (Request)
+    
+    rect rgb(250, 240, 230)
+        API->>Ctrl: execute : store(Request $request)
+        Ctrl->>Ctrl: FormRequest validate() (sécurité stricte)
+        Ctrl->>Model: Visite::create($validatedData)
+    end
+    
+    Model->>DB: INSERT INTO visites (...) -> ORM Persistance
+    DB-->>Model: Retourne l'Auto-Increment (ID)
+    Model-->>Ctrl: Hydratation en Objet Modèle retourné
+    Ctrl-->>API: Response JSON Code 201 (Created)
+    API-->>UI: { Données complètes de l'objet de Visite }
+    UI-->>RH: Affiche la notification Alert.Toast(success) ✅
+```
+
+---
+
+## 4. Diagramme d'Activité (Workflow Complet SST)
+Modélise l'algorithme métier de décision SST, de la planification de la visite jusqu'à l'incidence sur la Logistique financière (Facturation du Praticien SST).
+
+```mermaid
+flowchart TD
+    Start([🟢 Début]) --> Saisie[Planification de la Visite par le service RH]
+    Saisie --> Convocation[Émission d'une convocation à l'employé]
+    Convocation --> Presence{Retour du prestataire ?}
+    
+    Presence -->|Absent| Absence[❌ RH acte l'absence dans le système]
+    Absence -.->|Reprogrammer la visite| Saisie
+    
+    Presence -->|Présent| Consultation[🩺 RH réceptionne le bilan médical]
+    Consultation --> Examens[RH saisit les résultats de l'examen dans le système]
+    Examens --> Conclusion{Aptitude statuée ?}
+    
+    Conclusion -->|Apte| Apte[✅ Enregistré comme Apte]
+    Conclusion -->|Inapte / Restreint| Inapte[⚠️ Création d'une MedicalRestriction]
+    
+    Apte --> Dossier[📁 Commit dans le Dossier Médical]
+    Inapte --> Dossier
+    
+    Dossier --> Facturation{Validation comptable ?}
+    Facturation -->|Oui| Facture[🧾 RH Saisit le coût]
+    Facturation -->|Non| FinVisite[🏁 Clôturer administrativement la visite]
+    Facture --> FinVisite
+    
+    FinVisite --> End([🔴 Fin du Processus Clinique])
+
+    %% Styles CSS 
+    classDef startEnd fill:#E8EAF6,stroke:#3F51B5,stroke-width:2px,color:#1A237E
+    classDef process fill:#E3F2FD,stroke:#2196F3,stroke-width:2px,color:#0D47A1,rx:5px,ry:5px
+    classDef valid fill:#C8E6C9,stroke:#4CAF50,stroke-width:2px,color:#1B5E20
+    classDef error fill:#FFCDD2,stroke:#F44336,stroke-width:2px,color:#B71C1C
+    classDef warning fill:#FFF9C4,stroke:#F57F17,stroke-width:2px,color:#E65100
+    classDef decision fill:#FFF9C4,stroke:#FFB300,stroke-width:2px,color:#F57F17
+    
+    class Start,End startEnd
+    class Saisie,Convocation,Consultation,Examens,Dossier,Facture,FinVisite process
+    class Presence,Conclusion,Facturation decision
+    class Apte valid
+    class Inapte warning
+    class Absence error
+```
+
+---
+
+## 5. Diagramme d'États et Transitions (Statuts Visite et Facturation)
+Illustre les deux cycles de vies menés de front dans le module SST : l'avancement chronologique de la [Visite](file:///c:/Users/ayana/OneDrive/Desktop/med_hr/GestionBE/app/Models/Visite.php#8-50) et le règlement du [SSTPayment](file:///c:/Users/ayana/OneDrive/Desktop/med_hr/GestionBE/app/Models/SSTPayment.php#8-33).
+
+```mermaid
+stateDiagram-v2
+    classDef draft fill:#F5F5F5,color:#424242,stroke:#BDBDBD
+    classDef pending fill:#FFF9C4,color:#F57F17,stroke:#FBC02D
+    classDef approved fill:#C8E6C9,color:#2E7D32,stroke:#4CAF50
+    classDef cancelled fill:#E0E0E0,color:#757575,stroke:#9E9E9E
+
+    [*] --> Planifiée : Création de la visite (Attente de la date)
+    
+    state "Déroulement Physique de la Visite" as VisiteProcess {
+        Planifiée --> En_Cours : Le jour J, début de la consultation médicale
+        En_Cours --> Terminée : Saisie de la conclusion globale et lock du dossier
+        Planifiée --> Annulée_Absence : L'employé ne s'est pas présenté au poste
+    }
+    
+    state "Suivi Comptable du prestataire (Payment Status)" as PaymentProcess {
+        Terminée --> Non_Payé : Coût total de la visite généré en 'SSTPayment'
+        Non_Payé --> Paiement_Partiel : Versement d'un acompte ponctuel
+        Non_Payé --> Payé_Intégralement : Virement Validé et Approuvé
+        Paiement_Partiel --> Payé_Intégralement : Versement du Solde dû
+    }
+    
+    Payé_Intégralement --> [*]
+    Annulée_Absence --> [*]
+    Terminée --> [*] : Visites Gratuites ou déjà intégrées/forfaitaires
+
+    %% Attribution des styles (mermaid)
+    class Planifiée pending
+    class En_Cours pending
+    class Terminée approved
+    class Non_Payé draft
+    class Paiement_Partiel pending
+    class Payé_Intégralement approved
+    class Annulée_Absence cancelled
+```
+
+---
+
+## 6. [Bonus] Diagramme de Classes Secondaire (Modules RH & Paie)
+À titre indicatif, le système SST s'appuie sur la solidité du moteur RH et Paie pour extraire du salaire et gérer les absences et jours de travail de vos techniciens d'interventions/employés. Voici leurs classes essentielles, démontrant comment Med-HR orchestre les données en arrière-plan.
+
+```mermaid
+classDiagram
+    class Employe {
+        +int id
+        +String matricule
+        +float salaire_base
+        +String salaire_moyen
+        +booted()
+        +bulletins()
+        +demandesConges()
+        +departements()
+    }
+    
+    class Contrat {
+        +int id
+        +Date date_debut
+        +Date date_fin
+        +String type
+        +employe()
+    }
+    
+    class GpConge {
+        +int id
+        +float jours_cumules
+        +float solde_actuel
+        +employe()
+    }
+
+    class GpDemandeConge {
+        +int id
+        +Date date_debut
+        +Date date_fin
+        +String type_conge
+        +String statut
+        +employe()
+    }
+
+    class BultinModel {
+        +int id
+        +String nom_model
+        +theme()
+    }
+
+    class GpEmployeBulletin {
+        +int id
+        +float net_a_payer
+        +float total_retenu
+        +float total_gain
+        +employe()
+        +bulletinModel()
+    }
+
+    class ChargementCommande {
+        +int id
+        +String statut
+    }
+
+    class Commande {
+        +int id
+        +Date date_commande
+        +float montant_total
+    }
+
+    Employe "1" *-- "1..*" Contrat : Composition
+    Employe "1" *-- "1" GpConge : Composition (Solde Congé)
+    Employe "1" -- "*" GpDemandeConge : Association
+    Employe "1" -- "*" GpEmployeBulletin : Association
+    BultinModel "1" o-- "*" GpEmployeBulletin : Agrégation (Modèle Fiche de paie)
+    ChargementCommande "*" -- "1" Commande : Assoc (Pour Livraison Commerciale)
+
+    %% Styling 
+    style Employe fill:#4CAF50,stroke:#2E7D32,stroke-width:2px,color:#fff
+    style Contrat fill:#A5D6A7,stroke:#1B5E20,stroke-width:2px,color:#000
+    style GpConge fill:#81D4FA,stroke:#0277BD,stroke-width:2px,color:#000
+    style GpDemandeConge fill:#4FC3F7,stroke:#01579B,stroke-width:2px,color:#000
+    style BultinModel fill:#FFB74D,stroke:#E65100,stroke-width:2px,color:#000
+    style GpEmployeBulletin fill:#FF9800,stroke:#BF360C,stroke-width:2px,color:#000
+    style ChargementCommande fill:#BCAAA4,stroke:#795548,stroke-width:2px,color:#fff
+    style Commande fill:#A1887F,stroke:#5D4037,stroke-width:2px,color:#fff
+```
+
+---
+
+## 7. Modèle Logique de Données (MLD) - Base de Données SST
+Ce diagramme entité-association (ERD) traduit les Modèles Applicatifs vus précédemment en **Tables Physiques et Clés Étrangères (Foreign Keys)** telles qu'elles sont stockées dans la base de données relationnelle.
+
+```mermaid
+erDiagram
+    %% Tables Principales
+    employes {
+        int id PK
+        string matricule
+        string num_badge
+        string nom
+        string prenom
+        date date_naiss
+        string sexe
+        string cin
+        string adresse
+        string email
+        string tel
+        float salaire_base
+    }
+
+    sst_practitioners {
+        int id PK
+        string name
+        string first_name
+        string specialty
+        string type
+        string phone
+        string email
+        string status
+        string contract_type
+        float remuneration_amount
+    }
+
+    %% Tables Métier SST
+    dossier_medicals {
+        int id PK
+        int employe_id FK
+        string numero_dossier
+        string groupe_sanguin
+        text antecedents_personnels
+        text antecedents_familiaux
+        string allergies
+        string vaccinations
+        text notes
+    }
+
+    visites {
+        int id PK
+        int practitioner_id FK
+        date date
+        string time
+        string type
+        string statut
+        string emplacement
+        string lieu
+        string doctor
+        text notes
+        decimal unit_cost
+        decimal total_cost
+        string payment_status
+    }
+
+    examen_medicals {
+        int id PK
+        int visite_id FK
+        int employe_id FK
+        date date_examen
+        string motif
+        float poids
+        float taille
+        float imc
+        string ta_systolique
+        string ta_diastolique
+        string pouls
+        string temperature
+        string glycemie
+        string aptitude
+        string evaluation
+        string doctor_name
+    }
+
+    medical_restrictions {
+        int id PK
+        int employe_id FK
+        int examen_medical_id FK
+        text description
+        date date_debut
+        date date_fin
+        boolean est_permanent
+        string statut
+    }
+
+    medical_documents {
+        int id PK
+        int employe_id FK
+        int examen_medical_id FK
+        string nom
+        string type
+        string chemin_fichier
+        date date_document
+    }
+
+    sst_payments {
+        int id PK
+        int practitioner_id FK
+        decimal amount
+        string reference
+        string status
+        date payment_date
+        text notes
+    }
+
+    %% Tables de Pivot (Many-to-Many)
+    employe_visite {
+        int employe_id FK
+        int visite_id FK
+        string statut_individuel
+    }
+
+    sst_payment_visit {
+        int sst_payment_id FK
+        int visite_id FK
+    }
+
+    %% Relations Base de Données (Foreign Keys)
+    employes ||--o| dossier_medicals : "possède 1"
+    
+    %% Examen -> Visite et Employe
+    visites ||--o{ examen_medicals : "contient"
+    employes ||--o{ examen_medicals : "passe"
+    
+    %% Restrictions et Documents
+    employes ||--o{ medical_restrictions : "subit"
+    examen_medicals ||--o{ medical_restrictions : "déclenche"
+    
+    employes ||--o{ medical_documents : "possède"
+    examen_medicals ||--o{ medical_documents : "justifie"
+
+    %% Praticiens et Facturation
+    sst_practitioners ||--o{ visites : "supervise"
+    sst_practitioners ||--o{ sst_payments : "reçoit"
+    
+    %% Relations Pivot (M:M) -> Converties en 1:M vers la table pivot
+    employes ||--o{ employe_visite : "appartient à (pivot)"
+    visites ||--o{ employe_visite : "inclut (pivot)"
+    
+    sst_payments ||--o{ sst_payment_visit : "inclut (pivot)"
+    visites ||--o{ sst_payment_visit : "justifie (pivot)"
+```

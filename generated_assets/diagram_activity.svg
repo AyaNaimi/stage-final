@@ -1,0 +1,26 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900">
+  <defs>
+    <style>
+      .bg { fill: #F7F8FA; }
+      .box { fill: #FFFFFF; stroke: #0B2545; stroke-width: 2; }
+      .text { fill: #050F1E; font-family: Arial, sans-serif; font-size: 18px; }
+      .line { stroke: #006D5B; stroke-width: 2; }
+      .diamond { fill: #FFFFFF; stroke: #0B2545; stroke-width: 2; }
+    </style>
+  </defs>
+  <rect class="bg" x="0" y="0" width="1400" height="900"/>
+  <rect class="box" x="520" y="80" width="360" height="60" rx="10"/>
+  <text class="text" x="560" y="118">Planifier visite</text>
+  <line class="line" x1="700" y1="140" x2="700" y2="220"/>
+  <rect class="box" x="520" y="220" width="360" height="60" rx="10"/>
+  <text class="text" x="560" y="258">Réaliser examen</text>
+  <line class="line" x1="700" y1="280" x2="700" y2="360"/>
+  <polygon class="diamond" points="700,360 760,420 700,480 640,420"/>
+  <text class="text" x="665" y="426">Apte ?</text>
+  <line class="line" x1="640" y1="420" x2="480" y2="420"/>
+  <rect class="box" x="300" y="390" width="240" height="60" rx="10"/>
+  <text class="text" x="330" y="428">Clôturer</text>
+  <line class="line" x1="760" y1="420" x2="920" y2="420"/>
+  <rect class="box" x="920" y="390" width="240" height="60" rx="10"/>
+  <text class="text" x="940" y="428">Restriction</text>
+</svg>
