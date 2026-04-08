@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Departement;
 use App\Models\DossierMedical;
 use App\Models\Employe;
 use App\Models\Visite;
@@ -10,6 +11,44 @@ use Illuminate\Support\Carbon;
 
 class DossierMedicalController extends Controller
 {
+    private function resolveOrganizationHierarchy(Employe $employee): array
+    {
+        $node = $employee->departements->first();
+
+        if (!$node && !empty($employee->departement_id)) {
+            $node = Departement::with('parent.parent')->find($employee->departement_id);
+        }
+
+        if (!$node) {
+            return [
+                'department' => null,
+                'service' => null,
+            ];
+        }
+
+        $parent = $node->parent;
+        $grandParent = $parent?->parent;
+
+        if (!$parent) {
+            return [
+                'department' => $node->nom,
+                'service' => null,
+            ];
+        }
+
+        if (!$grandParent) {
+            return [
+                'department' => $parent->nom,
+                'service' => $node->nom,
+            ];
+        }
+
+        return [
+            'department' => $grandParent->nom,
+            'service' => $parent->nom,
+        ];
+    }
+
     private function toPublicUrl(?string $path): ?string
     {
         if (!$path) return null;
@@ -144,7 +183,8 @@ class DossierMedicalController extends Controller
         $latestExam = $exams->first();
         $latestVisite = $visites->first();
         $employeeDisplayId = (string) ($employee->matricule ?? $employee->id);
-        $department = optional($employee->departements->first())->nom;
+        $hierarchy = $this->resolveOrganizationHierarchy($employee);
+        $department = $hierarchy['department'];
         $vitals = $this->buildVitals($latestExam);
         $history = $this->buildHistory($employee);
         $restrictions = $employee->relationLoaded('medicalRestrictions')
@@ -180,6 +220,7 @@ class DossierMedicalController extends Controller
             'name' => trim(($employee->prenom ?? '') . ' ' . ($employee->nom ?? '')) ?: 'Employé',
             'photo' => $this->toPublicUrl($employee->url_img),
             'dept' => $department ?: 'Non affecté',
+            'service' => $hierarchy['service'],
             'lastVisit' => $this->formatDate($latestExam?->date_examen) ?: $this->formatDate($latestVisite?->date),
             'status' => $this->normalizeAptitude($latestExam?->aptitude),
             'history' => $history,
@@ -223,7 +264,7 @@ class DossierMedicalController extends Controller
     public function index()
     {
         $dossiers = DossierMedical::with([
-            'employe.departements',
+            'employe.departements.parent.parent',
             'employe.medicalExams',
             'employe.visites',
             'employe.medicalRestrictions',
@@ -231,7 +272,7 @@ class DossierMedicalController extends Controller
         ])->get();
         $dossiersByEmploye = $dossiers->keyBy('employe_id');
 
-        $items = Employe::with(['departements', 'medicalExams', 'visites', 'medicalRestrictions', 'medicalDocuments'])
+        $items = Employe::with(['departements.parent.parent', 'medicalExams', 'visites', 'medicalRestrictions', 'medicalDocuments'])
             ->get()
             ->map(function (Employe $employee) use ($dossiersByEmploye) {
                 $dossier = $dossiersByEmploye->get($employee->id);
@@ -260,7 +301,7 @@ class DossierMedicalController extends Controller
         ]);
 
         $dossier = DossierMedical::create($validated);
-        $dossier->load(['employe.departements', 'employe.medicalExams']);
+        $dossier->load(['employe.departements.parent.parent', 'employe.medicalExams']);
 
         return response()->json($this->formatRecord($dossier), 201);
     }
@@ -270,16 +311,16 @@ class DossierMedicalController extends Controller
      */
     public function show(string $id)
     {
-        $dossier = DossierMedical::with(['employe.departements', 'employe.medicalExams', 'employe.visites', 'employe.medicalRestrictions', 'employe.medicalDocuments'])->find($id);
+        $dossier = DossierMedical::with(['employe.departements.parent.parent', 'employe.medicalExams', 'employe.visites', 'employe.medicalRestrictions', 'employe.medicalDocuments'])->find($id);
         
         if (!$dossier) {
-            $employeeByIdentifier = Employe::with(['departements', 'medicalExams', 'visites', 'medicalRestrictions', 'medicalDocuments'])
+            $employeeByIdentifier = Employe::with(['departements.parent.parent', 'medicalExams', 'visites', 'medicalRestrictions', 'medicalDocuments'])
                 ->where('matricule', $id)
                 ->orWhere('cin', $id)
                 ->first();
 
             if ($employeeByIdentifier) {
-                $dossierByEmployee = DossierMedical::with(['employe.departements', 'employe.medicalExams', 'employe.visites', 'employe.medicalRestrictions', 'employe.medicalDocuments'])
+                $dossierByEmployee = DossierMedical::with(['employe.departements.parent.parent', 'employe.medicalExams', 'employe.visites', 'employe.medicalRestrictions', 'employe.medicalDocuments'])
                     ->where('employe_id', $employeeByIdentifier->id)
                     ->first();
 
@@ -290,7 +331,7 @@ class DossierMedicalController extends Controller
                 );
             }
 
-            $dossier = DossierMedical::with(['employe.departements', 'employe.medicalExams', 'employe.visites', 'employe.medicalRestrictions', 'employe.medicalDocuments'])
+            $dossier = DossierMedical::with(['employe.departements.parent.parent', 'employe.medicalExams', 'employe.visites', 'employe.medicalRestrictions', 'employe.medicalDocuments'])
                 ->where('employe_id', $id)
                 ->firstOrFail();
         }
@@ -316,7 +357,7 @@ class DossierMedicalController extends Controller
         ]);
 
         $dossier->update($validated);
-        $dossier->load(['employe.departements', 'employe.medicalExams']);
+        $dossier->load(['employe.departements.parent.parent', 'employe.medicalExams']);
 
         return response()->json($this->formatRecord($dossier));
     }
@@ -333,7 +374,7 @@ class DossierMedicalController extends Controller
 
     public function getByEmploye($employeId)
     {
-        $employee = Employe::with(['departements', 'medicalExams', 'visites', 'medicalRestrictions', 'medicalDocuments'])
+        $employee = Employe::with(['departements.parent.parent', 'medicalExams', 'visites', 'medicalRestrictions', 'medicalDocuments'])
             ->where('id', $employeId)
             ->orWhere('matricule', $employeId)
             ->orWhere('cin', $employeId)
@@ -343,7 +384,7 @@ class DossierMedicalController extends Controller
             return response()->json(['message' => 'Employé non trouvé'], 404);
         }
 
-        $dossier = DossierMedical::with(['employe.departements', 'employe.medicalExams', 'employe.visites'])
+        $dossier = DossierMedical::with(['employe.departements.parent.parent', 'employe.medicalExams', 'employe.visites'])
             ->where('employe_id', $employee->id)
             ->first();
         

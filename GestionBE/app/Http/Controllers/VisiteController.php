@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Departement;
 use App\Models\Employe;
 use App\Models\Visite;
 use Illuminate\Http\Request;
@@ -10,6 +11,44 @@ use Illuminate\Support\Facades\Schema;
 class VisiteController extends Controller
 {
     private static ?array $visitesColumns = null;
+
+    private function resolveOrganizationHierarchy(Employe $employee): array
+    {
+        $node = $employee->departements->first();
+
+        if (!$node && !empty($employee->departement_id)) {
+            $node = Departement::with('parent.parent')->find($employee->departement_id);
+        }
+
+        if (!$node) {
+            return [
+                'department' => null,
+                'service' => null,
+            ];
+        }
+
+        $parent = $node->parent;
+        $grandParent = $parent?->parent;
+
+        if (!$parent) {
+            return [
+                'department' => $node->nom,
+                'service' => null,
+            ];
+        }
+
+        if (!$grandParent) {
+            return [
+                'department' => $parent->nom,
+                'service' => $node->nom,
+            ];
+        }
+
+        return [
+            'department' => $grandParent->nom,
+            'service' => $parent->nom,
+        ];
+    }
 
     private function getVisitesColumns(): array
     {
@@ -30,22 +69,63 @@ class VisiteController extends Controller
         );
     }
 
-    private function formatEmployee(Employe $employee): array
+    private function summarizeExam($exam): ?array
+    {
+        if (!$exam) {
+            return null;
+        }
+
+        return [
+            'id' => $exam->id,
+            'date_examen' => $exam->date_examen,
+            'aptitude' => $exam->aptitude,
+            'evaluation' => $exam->evaluation,
+            'notes_subjectives' => $exam->notes_subjectives,
+            'notes_objectives' => $exam->notes_objectives,
+            'plan' => $exam->plan,
+            'doctor_name' => $exam->doctor_name,
+            'poids' => $exam->poids,
+            'taille' => $exam->taille,
+            'imc' => $exam->imc,
+            'ta_systolique' => $exam->ta_systolique,
+            'ta_diastolique' => $exam->ta_diastolique,
+            'pouls' => $exam->pouls,
+            'temperature' => $exam->temperature,
+            'glycemie' => $exam->glycemie,
+            'spo2' => $exam->spo2,
+        ];
+    }
+
+    private function formatEmployee(Employe $employee, $latestExam = null): array
     {
         $fullName = trim(($employee->prenom ?? '') . ' ' . ($employee->nom ?? ''));
+        $hierarchy = $this->resolveOrganizationHierarchy($employee);
+        $examSummary = $this->summarizeExam($latestExam);
+        $employeeStatus = $latestExam?->aptitude ?: ($employee->pivot->statut_individuel ?? 'Inscrit');
 
         return [
             'id' => $employee->id,
             'name' => $fullName !== '' ? $fullName : ($employee->nom ?? 'Employé'),
-            'department' => optional($employee->departements->first())->nom,
-            'status' => $employee->pivot->statut_individuel ?? 'Inscrit',
+            'department' => $hierarchy['department'],
+            'service' => $hierarchy['service'],
+            'status' => $employeeStatus,
             'lastVisitDate' => $employee->last_visit_date ?? null,
+            'exam' => $examSummary,
+            'result' => $latestExam?->evaluation,
         ];
     }
 
     private function formatVisit(Visite $visit): array
     {
-        $employees = $visit->employes->map(fn (Employe $employee) => $this->formatEmployee($employee))->values();
+        $latestExamsByEmployee = $visit->medicalExams
+            ->sortByDesc('date_examen')
+            ->unique('employe_id')
+            ->keyBy('employe_id');
+
+        $employees = $visit->employes
+            ->unique('id')
+            ->map(fn (Employe $employee) => $this->formatEmployee($employee, $latestExamsByEmployee->get($employee->id)))
+            ->values();
         $doctorName = $visit->doctor
             ?? $visit->medecin_nom
             ?? trim((optional($visit->practitioner)->first_name ?? '') . ' ' . (optional($visit->practitioner)->name ?? ''))
@@ -72,6 +152,7 @@ class VisiteController extends Controller
             'employes' => $employees,
             'selectedEmployees' => $employees->pluck('id')->values(),
             'department' => $employees->pluck('department')->filter()->unique()->implode(', '),
+            'services' => $employees->pluck('service')->filter()->unique()->values(),
             'created_at' => $visit->created_at,
             'updated_at' => $visit->updated_at,
         ];
@@ -82,7 +163,7 @@ class VisiteController extends Controller
      */
     public function index()
     {
-        $visits = Visite::with(['employes.departements', 'practitioner'])
+        $visits = Visite::with(['employes.departements.parent.parent', 'practitioner', 'medicalExams'])
             ->orderBy('date', 'desc')
             ->get()
             ->map(fn (Visite $visit) => $this->formatVisit($visit));
@@ -94,17 +175,19 @@ class VisiteController extends Controller
     {
         $employees = Employe::query()
             ->select(['id', 'nom', 'prenom'])
-            ->with('departements:id,nom')
+            ->with('departements.parent.parent')
             ->withMax('visites as last_visit_date', 'date')
             ->orderBy('nom')
             ->get()
             ->map(function (Employe $employee) {
                 $fullName = trim(($employee->prenom ?? '') . ' ' . ($employee->nom ?? ''));
+                $hierarchy = $this->resolveOrganizationHierarchy($employee);
 
                 return [
                     'id' => $employee->id,
                     'name' => $fullName !== '' ? $fullName : ($employee->nom ?? 'Employé'),
-                    'department' => optional($employee->departements->first())->nom,
+                    'department' => $hierarchy['department'],
+                    'service' => $hierarchy['service'],
                     'lastVisitDate' => $employee->last_visit_date,
                 ];
             })
@@ -173,7 +256,7 @@ class VisiteController extends Controller
             $visite->employes()->sync($syncData);
         }
 
-        $visite->load(['employes.departements', 'practitioner']);
+        $visite->load(['employes.departements.parent.parent', 'practitioner', 'medicalExams']);
 
         return response()->json($this->formatVisit($visite), 201);
     }
@@ -183,7 +266,7 @@ class VisiteController extends Controller
      */
     public function show(string $id)
     {
-        $visite = Visite::with(['employes.departements', 'practitioner'])->findOrFail($id);
+        $visite = Visite::with(['employes.departements.parent.parent', 'practitioner', 'medicalExams'])->findOrFail($id);
         return response()->json($this->formatVisit($visite));
     }
 
@@ -254,7 +337,7 @@ class VisiteController extends Controller
             $visite->employes()->sync($syncData);
         }
 
-        $visite->load(['employes.departements', 'practitioner']);
+        $visite->load(['employes.departements.parent.parent', 'practitioner', 'medicalExams']);
 
         return response()->json($this->formatVisit($visite));
     }

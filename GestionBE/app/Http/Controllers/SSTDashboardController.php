@@ -167,13 +167,30 @@ class SSTDashboardController extends Controller
                 ->filter(fn($d) => $d['total'] > 0)
                 ->values();
 
+            $topRiskDepartment = collect($departmentCompliance)->sortBy(function ($dept) {
+                return match ($dept['risk']) {
+                    'high' => 0,
+                    'medium' => 1,
+                    default => 2,
+                };
+            })->first();
+
+            $insightSummary = [
+                'riskDepartment' => $topRiskDepartment['name'] ?? null,
+                'riskLevel' => $topRiskDepartment['risk'] ?? 'low',
+                'overdueVisits' => $overdueCount,
+                'upcomingVisits' => $upcomingVisitsCount,
+                'pendingPayments' => $pendingPaymentsCount,
+            ];
+
             return response()->json([
                 'complianceData' => $complianceData,
                 'absenceStats' => $absenceStats,
                 'recentAbsences' => $recentAbsences,
                 'activeRestrictions' => $activeRestrictions,
-                'recentExams' => $recentExams, // Added recent exams
-                'departmentCompliance' => $departmentCompliance
+                'recentExams' => $recentExams,
+                'departmentCompliance' => $departmentCompliance,
+                'insightSummary' => $insightSummary,
             ]);
 
         } catch (\Exception $e) {
