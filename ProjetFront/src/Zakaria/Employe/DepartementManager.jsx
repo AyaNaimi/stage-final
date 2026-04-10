@@ -80,19 +80,43 @@ function DepartementManager() {
 
 
   const fetchDepartmentHierarchy = async () => {
+    setIsLoading(true);
     try {
-      const response = await axios.get('http://127.0.0.1:8000/api/departements/hierarchy');
-      setDepartements(response.data);
-      localStorage.setItem('departmentHierarchy', JSON.stringify(response.data));
+      console.log('Fetching department hierarchy from API...');
+      // Try with localhost instead of 127.0.0.1
+      const response = await axios.get('http://localhost:8000/api/departements/hierarchy');
+      console.log('API Response:', response.data);
+      
+      if (response.data && Array.isArray(response.data)) {
+        setDepartements(response.data);
+        localStorage.setItem('departmentHierarchy', JSON.stringify(response.data));
+      } else {
+        console.warn('Unexpected response format:', response.data);
+      }
     } catch (error) {
       console.error("Error fetching department hierarchy:", error);
-      if (error.response && error.response.status === 403) {
-        Swal.fire({
-          icon: "error",
-          title: "Accès refusé",
-          text: "Vous n'avez pas l'autorisation de voir la hiérarchie des départements.",
-        });
+      console.log("Trying alternative URL...");
+      
+      // Fallback to 127.0.0.1
+      try {
+        const response = await axios.get('http://127.0.0.1:8000/api/departements/hierarchy');
+        console.log('Fallback API Response:', response.data);
+        if (response.data && Array.isArray(response.data)) {
+          setDepartements(response.data);
+          localStorage.setItem('departmentHierarchy', JSON.stringify(response.data));
+        }
+      } catch (fallbackError) {
+        console.error("Fallback also failed:", fallbackError);
+        if (error.response && error.response.status === 403) {
+          Swal.fire({
+            icon: "error",
+            title: "Accès refusé",
+            text: "Vous n'avez pas l'autorisation de voir la hiérarchie des départements.",
+          });
+        }
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -102,7 +126,11 @@ function DepartementManager() {
     const departmentsFromStorage = localStorage.getItem('departmentHierarchy');
 
     if (departmentsFromStorage) {
-      setDepartements(JSON.parse(departmentsFromStorage));
+      const parsed = JSON.parse(departementsFromStorage);
+      console.log('Loaded from storage:', parsed);
+      if (parsed && parsed.length > 0) {
+        setDepartements(parsed);
+      }
     }
 
     fetchDepartmentHierarchy();
@@ -337,12 +365,13 @@ function DepartementManager() {
   };
 
   const renderDepartement = (departement) => (
-    <li key={departement.id} style={{ listStyleType: "none" }}>
+    <li key={departement.id} style={{ listStyleType: "none", border: "1px solid blue", margin: "2px", padding: "5px" }}>
       <div
         className={`department-item ${departement.id === selectedDepartementId ? 'selected' : ''}`}
         ref={(el) => (departementRef.current[departement.id] = el)}
+        style={{ backgroundColor: "yellow" }}
       >
-        <div className="department-item-content">
+        <div className="department-item-content" style={{ backgroundColor: "lightgreen" }}>
           {departement.children && departement.children.length > 0 && (
             <button
               className="expand-button"
@@ -384,6 +413,7 @@ function DepartementManager() {
               onContextMenu={(e) => handleContextMenu(e, departement.id)}
               onClick={() => handleDepartementClick(departement.id, departement.nom)}
               className={`common-text ${selectedDepartementId === departement.id ? 'selected' : ''}`}
+              style={{ color: "red", fontWeight: "bold", fontSize: "20px" }}
             >
               <IoFolderOpenOutline size={18} />
               {departement.nom}
@@ -648,7 +678,24 @@ function DepartementManager() {
                 </div>
               </li>
               <div className="separator" style={{ marginTop: '-1%' }}></div>
-              {departements.map((departement) => renderDepartement(departement))}
+              
+              {isLoading ? (
+                <li style={{ listStyleType: "none", padding: "20px", textAlign: "center" }}>
+                  <div className="text-muted">Chargement des départements...</div>
+                </li>
+              ) : departements && departements.length > 0 ? (
+                departements.map((departement) => renderDepartement(departement))
+              ) : (
+                <li style={{ listStyleType: "none", padding: "20px", textAlign: "center" }}>
+                  <div className="text-muted">Aucun département trouvé</div>
+                  <button 
+                    className="btn btn-sm btn-primary mt-2"
+                    onClick={fetchDepartmentHierarchy}
+                  >
+                    Actualiser
+                  </button>
+                </li>
+              )}
             </ul>
 
             {contextMenu.visible && (

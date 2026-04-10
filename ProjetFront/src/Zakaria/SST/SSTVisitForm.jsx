@@ -7,10 +7,10 @@ const SSTVisitForm = ({ onSubmit, onCancel, initialData }) => {
     const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
     const [availableEmployees, setAvailableEmployees] = useState([]);
-    
+
     // Fetch doctors from SSTPractitioner API
     const [doctorsList, setDoctorsList] = useState([]);
-    
+
     useEffect(() => {
         const fetchDoctors = async () => {
             try {
@@ -80,7 +80,7 @@ const SSTVisitForm = ({ onSubmit, onCancel, initialData }) => {
 
     const getPriorityBadge = (priority) => {
         const badges = {
-            overdue: { color: '#ef4444', label: 'RETARD', bgColor: '#fee2e2' },
+            overdue: { color: '#ef4444ff', label: 'RETARD', bgColor: '#fee2e2' },
             upcoming: { color: '#f97316', label: 'À PRÉVOIR', bgColor: '#ffedd5' },
             uptodate: { color: '#22c55e', label: 'À JOUR', bgColor: '#dcfce7' }
         };
@@ -502,7 +502,7 @@ const SSTVisitForm = ({ onSubmit, onCancel, initialData }) => {
                                     value={filters.department}
                                     onChange={(e) => setFilters(prev => ({ ...prev, department: e.target.value }))}
                                 >
-                                    <option value="">Tous les services</option>
+                                    <option value="">Tous les départements</option>
                                     {departments.map(d => <option key={d} value={d}>{d}</option>)}
                                 </Form.Select>
                             </div>
@@ -662,21 +662,17 @@ const SSTVisitForm = ({ onSubmit, onCancel, initialData }) => {
                                                                 handleEmployeeToggle(emp.id);
                                                             }}
                                                         >
-                                                            <X size={16} />
+                                                            <X size={14} />
                                                         </button>
                                                     </div>
                                                 );
                                             })
-                                    ) : (
-                                        <div className="d-flex flex-column align-items-center justify-content-center h-100 text-muted p-4">
-                                            <Users size={48} className="mb-3 opacity-25" />
-                                            <div className="text-center">
-                                                <div className="small fw-bold mb-1">Zone de Sélection</div>
-                                                <div className="extra-small">Glissez-déposez des collaborateurs ici</div>
+                                        ) : (
+                                            <div className="d-flex flex-column align-items-center justify-content-center h-100 text-muted p-4">
+                                                <div className="mb-2">Glissez-déposez des collaborateurs ici</div>
                                                 <div className="extra-small">ou cliquez sur un nom dans la liste</div>
                                             </div>
-                                        </div>
-                                    )}
+                                        )}
                                 </div>
                             </div>
                         </div>

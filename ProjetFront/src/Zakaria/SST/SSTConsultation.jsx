@@ -185,18 +185,27 @@ const SSTConsultation = () => {
                     doctor: visit.doctor || visit.medecin_nom || 'Non renseigné',
                 }));
 
-                const mappedPatients = visitRows.flatMap((visit) =>
-                    (visit.employees || []).map((employee) => ({
-                        id: String(employee.id),
-                        employeeId: employee.id,
-                        name: employee.name || 'Employé',
-                        dept: employee.department || 'Non affecté',
-                        status: employee.status || 'En attente',
-                        visitId: visit.id,
-                        visitType: visit.type || 'Périodique',
-                        doctor: visit.doctor || visit.medecin_nom || 'Non renseigné',
-                    }))
-                );
+                const mappedPatients = [];
+                const seenPatients = new Set();
+                
+                visitRows.forEach((visit) => {
+                    (visit.employees || []).forEach((employee) => {
+                        const uniqueKey = `${visit.id}-${employee.id}`;
+                        if (!seenPatients.has(uniqueKey)) {
+                            seenPatients.add(uniqueKey);
+                            mappedPatients.push({
+                                id: String(employee.id),
+                                employeeId: employee.id,
+                                name: employee.name || 'Employé',
+                                dept: employee.department || 'Non affecté',
+                                status: employee.status || 'En attente',
+                                visitId: visit.id,
+                                visitType: visit.type || 'Périodique',
+                                doctor: visit.doctor || visit.medecin_nom || 'Non renseigné',
+                            });
+                        }
+                    });
+                });
 
                 setVisits(mappedVisits);
                 setPatients(mappedPatients);
@@ -263,7 +272,7 @@ const SSTConsultation = () => {
 
         setFilteredData(filtered);
         setPage(0);
-    }, [selectedVisitId, filterDept, sidebarFilterDept, searchQuery, filteredVisits]);
+    }, [selectedVisitId, filterDept, sidebarFilterDept, searchQuery, filteredVisits, patients]);
 
     const mapExamToTimeline = (exam) => ({
         id: exam.id,
@@ -792,7 +801,7 @@ const SSTConsultation = () => {
                                                             fontWeight: 600,
                                                             color: '#2c3e50'
                                                         }}>
-                                                            Service
+                                                            Département
                                                         </label>
 
                                                         <select
@@ -807,7 +816,7 @@ const SSTConsultation = () => {
                                                                 borderRadius: 6
                                                             }}
                                                         >
-                                                            <option value="">Tous les services</option>
+                                                            <option value="">Tous les départements</option>
                                                             {departments.map((d, i) => (
                                                                 <option key={i} value={d}>{d}</option>
                                                             ))}
@@ -829,8 +838,7 @@ const SSTConsultation = () => {
                                             handleSelectAllChange={() => { }}
                                             handleCheckboxChange={() => { }}
                                             handleEdit={(item) => item.status !== 'Complété' && handleSelectPatient(item)}
-                                            handleDelete={() => { }}
-                                            handleDeleteSelected={() => { }}
+                                            canDelete={false}
                                             rowsPerPage={rowsPerPage}
                                             page={page}
                                             handleChangePage={(p) => setPage(p)}

@@ -81,12 +81,7 @@ const SSTVisits = () => {
     // Employees for selection (should be fetched from API)
     const employees = [];
 
-    const [patientFilters, setPatientFilters] = useState({
-        dept: '',
-        status: '',
-        urgent: 'all',
-        decision: '' // New: Filter by aptitude result
-    });
+    const [patientFilters, setPatientFilters] = useState({});
 
     const [visitFilters, setVisitFilters] = useState({
         startDate: '',
@@ -120,11 +115,26 @@ const SSTVisits = () => {
         )).map((doctor) => ({ label: doctor, value: doctor }));
     }, [visitsData]);
 
+    const getUniqueEmployees = (employees = []) => {
+        const seen = new Set();
+
+        return employees.filter((employee) => {
+            const key = String(employee?.id ?? '');
+            if (!key || seen.has(key)) {
+                return false;
+            }
+            seen.add(key);
+            return true;
+        });
+    };
+
     const processedVisits = useMemo(() => {
         return visitsData.map(visit => {
-            const employees = visit.employees || [];
+            const employees = getUniqueEmployees(visit.employees || []);
             const total = employees.length;
-            const completed = employees.filter(e => e.status === 'Complété' || e.status === 'Terminée').length;
+            const completed = employees.filter(e =>
+                ['Complété', 'Terminée', 'Apte', 'Inapte', 'Apte (Rés)', 'Expertise'].includes(e.status)
+            ).length;
             const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
 
             let status = 'planifiée';
@@ -133,11 +143,23 @@ const SSTVisits = () => {
 
             return {
                 ...visit,
+                employees,
+                employes: employees,
                 progress,
                 status
             };
         });
     }, [visitsData]);
+
+    const getVisitDepartmentOptions = (visit) => {
+        return Array.from(
+            new Set(
+                getUniqueEmployees(visit?.employees || [])
+                    .map(emp => emp.department)
+                    .filter(Boolean)
+            )
+        );
+    };
 
     const [filteredData, setFilteredData] = useState(processedVisits);
     const [page, setPage] = useState(0);
@@ -207,11 +229,16 @@ const SSTVisits = () => {
         // Header Filters
         if (searchQuery) {
             const query = searchQuery.toLowerCase();
-            filtered = filtered.filter(item =>
-                (item.doctor?.toLowerCase().includes(query)) ||
-                (item.department?.toLowerCase().includes(query)) ||
-                (item.id?.toLowerCase().includes(query))
-            );
+            filtered = filtered.filter(item => {
+                const matchDoctor = item.doctor && String(item.doctor).toLowerCase().includes(query);
+                const matchId = item.id && String(item.id).toLowerCase().includes(query);
+                const matchDepartment = item.department && String(item.department).toLowerCase().includes(query);
+                const matchEmployees = item.employees && item.employees.some(emp => 
+                    (emp.name && String(emp.name).toLowerCase().includes(query)) ||
+                    (emp.department && String(emp.department).toLowerCase().includes(query))
+                );
+                return matchDoctor || matchId || matchDepartment || matchEmployees;
+            });
         }
 
         if (visitFilters.startDate) {
@@ -221,7 +248,7 @@ const SSTVisits = () => {
             filtered = filtered.filter(v => v.date <= visitFilters.endDate);
         }
         if (visitFilters.doctor) {
-            filtered = filtered.filter(v => v.doctor && v.doctor.toLowerCase().includes(visitFilters.doctor.toLowerCase()));
+            filtered = filtered.filter(v => v.doctor && String(v.doctor).toLowerCase().includes(visitFilters.doctor.toLowerCase()));
         }
         if (visitFilters.status) {
             filtered = filtered.filter(v => v.status === visitFilters.status);
@@ -229,6 +256,13 @@ const SSTVisits = () => {
 
         setFilteredData(filtered);
     }, [searchQuery, processedVisits, visitFilters]);
+
+    const escapeHtml = (value) => String(value ?? '-')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 
     const handleCreateVisit = async (formData) => {
         try {
@@ -295,17 +329,219 @@ const SSTVisits = () => {
     };
 
     const handleDownload = (visit) => {
-        Swal.fire({
-            title: 'Génération du rapport...',
-            html: `Préparation du rapport pour le département <b>${visit.department}</b>`,
-            timer: 1500,
-            timerProgressBar: true,
-            didOpen: () => {
-                Swal.showLoading()
-            }
-        }).then(() => {
-            Swal.fire("Téléchargé", `Le rapport ${visit.id}.pdf a été généré.`, "success");
-        });
+        const employees = getUniqueEmployees(visit.employees || []);
+        const reportWindow = window.open('', '_blank', 'width=1200,height=900');
+
+        if (!reportWindow) {
+            Swal.fire('Erreur', 'Le navigateur a bloqué l’ouverture du rapport.', 'error');
+            return;
+        }
+
+        const generatedAt = new Date().toLocaleString('sv-SE').replace(' ', ' ');
+        const participantRows = employees.length > 0
+            ? employees.map((emp, index) => `
+                <tr>
+                    <td class="participant-index">${index + 1}</td>
+                    <td>
+                        <div class="participant-name">${escapeHtml(emp.name)}</div>
+                        <div class="participant-id">ID ${escapeHtml(emp.id)}</div>
+                    </td>
+                    <td>
+                        <div class="participant-main">${escapeHtml(emp.department || 'N/A')}</div>
+                    </td>
+                    <td><span class="participant-status">${escapeHtml(emp.status || 'Inscrit')}</span></td>
+                </tr>
+            `).join('')
+            : `
+                <tr>
+                    <td colspan="4" style="text-align:center;">Aucun participant</td>
+                </tr>
+            `;
+
+        const employeeSections = employees.length > 0
+            ? employees.map((emp) => {
+                const exam = emp.exam || {};
+                const bloodPressure = exam.ta_systolique || exam.ta_diastolique
+                    ? `${exam.ta_systolique || '-'} / ${exam.ta_diastolique || '-'}`
+                    : '-';
+                const statusValue = String(emp.status || 'En attente');
+                const statusClass =
+                    statusValue.toLowerCase().includes('inapte') ? 'danger' :
+                    statusValue.toLowerCase().includes('rés') || statusValue.toLowerCase().includes('restricted') ? 'warning' :
+                    statusValue.toLowerCase().includes('apte') ? 'success' :
+                    'pending';
+
+                return `
+                    <section class="employee-card">
+                        <div class="employee-header">
+                            <div>
+                                <h3>${escapeHtml(emp.name)}</h3>
+                                <p>Département ${escapeHtml(emp.department || 'N/A')}</p>
+                            </div>
+                            <span class="badge ${statusClass}">${escapeHtml(statusValue)}</span>
+                        </div>
+                        <table class="exam-table">
+                            <tbody>
+                                <tr>
+                                    <td><strong>Employé:</strong> ${escapeHtml(emp.name)}</td>
+                                    <td><strong>Département:</strong> ${escapeHtml(emp.department || 'N/A')}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Date:</strong> ${escapeHtml(exam.date_examen || visit.date || '-')}</td>
+                                    <td><strong>Motif:</strong> ${escapeHtml(visit.type || 'Suivi')}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Poids:</strong> ${escapeHtml(exam.poids || 'N/A')} kg</td>
+                                    <td><strong>Taille:</strong> ${escapeHtml(exam.taille || 'N/A')} cm</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>IMC:</strong> ${escapeHtml(exam.imc || 'N/A')}</td>
+                                    <td><strong>Tension:</strong> ${escapeHtml(bloodPressure)} mmHg</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Pouls:</strong> ${escapeHtml(exam.pouls || 'N/A')} bpm</td>
+                                    <td><strong>Température:</strong> ${escapeHtml(exam.temperature || 'N/A')} °C</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Glycémie:</strong> ${escapeHtml(exam.glycemie || 'N/A')} g/L</td>
+                                    <td><strong>SpO2:</strong> ${escapeHtml(exam.spo2 || 'N/A')} %</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="metrics-row">
+                            <div><span>Vision D</span><strong>${escapeHtml(exam.vision_droite || 'N/A')}</strong></div>
+                            <div><span>Vision G</span><strong>${escapeHtml(exam.vision_gauche || 'N/A')}</strong></div>
+                            <div><span>Audition D</span><strong>${escapeHtml(exam.audition_droite || 'Normal')}</strong></div>
+                            <div><span>Audition G</span><strong>${escapeHtml(exam.audition_gauche || 'Normal')}</strong></div>
+                        </div>
+                        <div class="notes">
+                            <p><strong>Notes subjectives:</strong> ${escapeHtml(exam.notes_subjectives || visit.notes || '-')}</p>
+                            <p><strong>Notes objectives:</strong> ${escapeHtml(exam.notes_objectives || '-')}</p>
+                            <p><strong>Évaluation:</strong> ${escapeHtml(emp.result || exam.evaluation || visit.notes || '-')}</p>
+                            <p><strong>Plan:</strong> ${escapeHtml(exam.plan || '-')}</p>
+                        </div>
+                    </section>
+                `;
+            }).join('')
+            : '<p>Aucun collaborateur pour cette visite.</p>';
+
+        reportWindow.document.write(`
+            <!DOCTYPE html>
+            <html lang="fr">
+            <head>
+                <meta charset="UTF-8" />
+                <title>Rapport de Visite Médicale - ${escapeHtml(visit.id)}</title>
+                <style>
+                    @page { margin: 20px 28px 32px; }
+                    body { font-family: Arial, sans-serif; color: #4b5563; margin: 0; font-size: 14px; }
+                    .page { min-height: calc(100vh - 40px); }
+                    .page-break { page-break-before: always; }
+                    .title-wrap { text-align: center; margin-top: 18px; }
+                    .title-wrap h1 { margin: 0; color: #2d8a96; font-size: 28px; font-weight: 800; }
+                    .subtitle { color: #7a8793; font-size: 16px; margin-top: 8px; }
+                    .generated { color: #7a8793; font-size: 15px; margin-top: 10px; }
+                    .separator { border-top: 3px solid #2d8a96; margin: 28px 0 34px; }
+                    .section-title { color: #2d8a96; font-size: 18px; font-weight: 800; margin: 0 0 18px; }
+                    .info-grid { display: grid; grid-template-columns: 180px 1fr; row-gap: 10px; column-gap: 12px; margin-bottom: 30px; }
+                    .label { font-weight: 700; }
+                    .value { text-align: right; }
+                    .participants-title { font-size: 16px; font-weight: 800; margin: 20px 0 12px; color: #364152; }
+                    .participants-wrap { border: 1px solid #dfe4e8; border-radius: 12px; overflow: hidden; background: #fff; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04); }
+                    .participants-table { margin: 0; table-layout: fixed;border:collapse }
+                    .participants-table col.index-col { width: 52px; }
+                    .participants-table col.employee-col { width: 34%; }
+                    .participants-table col.department-col { width: 42%; }
+                    .participants-table col.status-col { width: 24%; }
+                    .participants-table th, .participants-table td { border: 1px solid #e6eaee; padding: 14px 12px; text-align: left; font-size: 13px; vertical-align: middle; }
+                    .participants-table th { color: #97a3ad; font-weight: 800; background: linear-gradient(180deg, #fbfcfc 0%, #f4f8f8 100%); text-transform: uppercase; letter-spacing: 0.4px; font-size: 11px; }
+                    .participants-table tbody tr:nth-child(even) { background: #fcfdfd; }
+                    .participant-index { width: 44px; color: #64748b; font-weight: 800; text-align: center; font-size: 14px; }
+                    .participant-name { font-weight: 800; color: #334155; font-size: 14px; line-height: 1.25; }
+                    .participant-id { color: #94a3b8; font-size: 11px; margin-top: 4px; }
+                    .participant-main { font-weight: 700; color: #475569; font-size: 13px; line-height: 1.25; }
+                    .participant-sub { color: #2d8a96; font-size: 11px; margin-top: 4px; font-weight: 700; line-height: 1.2; }
+                    .participant-status { display: inline-block; padding: 7px 12px; border-radius: 999px; background: rgba(45, 138, 150, 0.10); color: #2d8a96; font-size: 11px; font-weight: 800; min-width: 88px; text-align: center; }
+                    .employee-card { border: 1px solid #dfe4e8; border-radius: 10px; padding: 16px; margin-bottom: 18px; page-break-inside: avoid; }
+                    .employee-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+                    .employee-header h3 { margin: 0; color: #2d8a96; font-size: 16px; font-weight: 800; }
+                    .employee-header p { margin: 2px 0 0; color: #7a8793; font-size: 11px; }
+                    .badge { font-size: 12px; font-weight: 800; }
+                    .badge.pending { color: #b8860b; }
+                    .badge.success { color: #2d8a96; }
+                    .badge.warning { color: #b8860b; }
+                    .badge.danger { color: #c2410c; }
+                    .exam-table { width: 100%; border-collapse: collapse; margin: 8px 0 14px; }
+                    .exam-table td { border: 1px solid #d9dee3; padding: 8px 10px; font-size: 13px; width: 50%; }
+                    .metrics-row { display: grid; grid-template-columns: repeat(4, 1fr); text-align: center; margin: 18px 0 10px; }
+                    .metrics-row span { display: block; color: #8a94a0; font-size: 11px; margin-bottom: 4px; }
+                    .metrics-row strong { color: #2d8a96; font-size: 16px; }
+                    .notes p { margin: 10px 0; font-size: 13px; color: #374151; }
+                    .footer { text-align: center; color: #7a8793; font-size: 12px; margin-top: 24px; padding: 24px 0 10px; }
+                    .footer p { margin: 8px 0; }
+                </style>
+            </head>
+            <body>
+                <div class="page">
+                    <div class="title-wrap">
+                        <h1>RAPPORT DE VISITE MÉDICALE SST</h1>
+                        <div class="subtitle">Santé et Sécurité au Travail</div>
+                        <div class="generated">Date de génération: ${escapeHtml(generatedAt)}</div>
+                    </div>
+                    <div class="separator"></div>
+
+                    <h2 class="section-title">Informations de la Visite</h2>
+                    <div class="info-grid">
+                        <div class="label">ID Visite:</div><div class="value">${escapeHtml(visit.id)}</div>
+                        <div class="label">Date:</div><div class="value">${escapeHtml(visit.date)} ${escapeHtml(visit.time || '')}</div>
+                        <div class="label">Type:</div><div class="value">${escapeHtml(visit.type || 'Suivi')}</div>
+                        <div class="label">Statut:</div><div class="value">${escapeHtml(visit.status || visit.statut || 'Planifiée')}</div>
+                        <div class="label">Lieu:</div><div class="value">${escapeHtml(visit.lieu || visit.location || '-')}</div>
+                        <div class="label">Médecin:</div><div class="value">${escapeHtml(visit.doctor || '-')}</div>
+                        <div class="label">Notes:</div><div class="value">${escapeHtml(visit.notes || '-')}</div>
+                    </div>
+
+                    <div class="participants-title">Participants (${escapeHtml(employees.length)} employé${employees.length > 1 ? 's' : ''})</div>
+                    <div class="participants-wrap">
+                        <table class="participants-table">
+                            <colgroup>
+                                <col class="index-col" />
+                                <col class="employee-col" />
+                                <col class="department-col" />
+                                <col class="status-col" />
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Employé</th>
+                                    <th>Département</th>
+                                    <th>Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${participantRows}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="footer">
+                        <p>Document généré par Med-HR - Gestion SST</p>
+                        <p>Rapport confidentiel - Usage interne uniquement</p>
+                    </div>
+                </div>
+
+                <div class="page page-break">
+                    <h2 class="section-title">Résultats des Examens Médicaux</h2>
+                    ${employeeSections}
+                    <div class="footer">
+                        <p>Document généré par Med-HR - Gestion SST</p>
+                        <p>Rapport confidentiel - Usage interne uniquement</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `);
+        reportWindow.document.close();
+        reportWindow.focus();
+        reportWindow.print();
     };
 
     const openEdit = (visit) => {
@@ -439,9 +675,9 @@ const SSTVisits = () => {
                                 item.status === 'en_cours' ? 'rgba(245, 158, 11, 0.08)' :
                                     'rgba(34, 197, 94, 0.08)',
                         color:
-                            item.status === 'planifiée' ? '#0ea5e9' :
-                                item.status === 'en_cours' ? '#f59e0b' :
-                                    '#22c55e',
+                            item.status === 'planifiée' ? '#ffffffff' :
+                                item.status === 'en_cours' ? '#ffffffff' :
+                                    '#ffffffff',
                         fontSize: '0.65rem',
                         padding: '6px 12px',
                         fontWeight: 800,
@@ -455,7 +691,9 @@ const SSTVisits = () => {
         }
     ];
 
-    const renderExpandedRow = (visit) => (
+    const renderExpandedRow = (visit) => {
+        const currentFilters = patientFilters[visit.id] || { dept: '', decision: '' };
+        return (
         <div className="expanded-row-container">
             <div className="sub-table-header">
                 <div className="sub-table-title">
@@ -468,20 +706,20 @@ const SSTVisits = () => {
                             size="sm"
                             className="extra-small fw-bold border-0 bg-white shadow-sm"
                             style={{ width: '160px', borderRadius: '8px' }}
-                            value={patientFilters.dept}
-                            onChange={e => setPatientFilters({ ...patientFilters, dept: e.target.value })}
+                            value={currentFilters.dept}
+                            onChange={e => setPatientFilters({ ...patientFilters, [visit.id]: { ...currentFilters, dept: e.target.value } })}
                         >
-                            <option value="">Tous les services</option>
-                            <option>Production</option>
-                            <option>Logistique</option>
-                            <option>RH</option>
+                            <option value="">Tous les départements</option>
+                            {getVisitDepartmentOptions(visit).map((departmentName) => (
+                                <option key={departmentName} value={departmentName}>{departmentName}</option>
+                            ))}
                         </Form.Select>
                         <Form.Select
                             size="sm"
                             className="extra-small fw-bold border-0 bg-white shadow-sm"
                             style={{ width: '160px', borderRadius: '8px' }}
-                            value={patientFilters.decision}
-                            onChange={e => setPatientFilters({ ...patientFilters, decision: e.target.value })}
+                            value={currentFilters.decision}
+                            onChange={e => setPatientFilters({ ...patientFilters, [visit.id]: { ...currentFilters, decision: e.target.value } })}
                         >
                             <option value="">Toutes décisions</option>
                             <option value="Apte">Apte</option>
@@ -490,7 +728,7 @@ const SSTVisits = () => {
                         </Form.Select>
                     </div>
                     <div className="sub-table-badge">
-                        {(visit.employees || []).length} COLLABORATEURS
+                        {getUniqueEmployees(visit.employees || []).length} COLLABORATEURS
                     </div>
                 </div>
             </div>
@@ -500,16 +738,16 @@ const SSTVisits = () => {
                     <thead style={{ backgroundColor: '#f9fafb' }}>
                         <tr>
                             <th className="border-0 extra-small fw-black text-muted text-uppercase">Collaborateur</th>
-                            <th className="border-0 extra-small fw-black text-muted text-uppercase">Service</th>
+                            <th className="border-0 extra-small fw-black text-muted text-uppercase">Département</th>
                             <th className="border-0 extra-small fw-black text-muted text-uppercase">Résultat / Statut</th>
                             <th className="border-0 extra-small fw-black text-muted text-uppercase text-end px-4">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {(() => {
-                            const filteredEmployees = (visit.employees || [])
-                                .filter(emp => !patientFilters.dept || emp.department === patientFilters.dept)
-                                .filter(emp => !patientFilters.decision || emp.status === patientFilters.decision);
+                            const filteredEmployees = getUniqueEmployees(visit.employees || [])
+                                .filter(emp => !currentFilters.dept || emp.department === currentFilters.dept)
+                                .filter(emp => !currentFilters.decision || emp.status === currentFilters.decision);
 
                             if (filteredEmployees.length > 0) {
                                 return filteredEmployees.map(emp => (
@@ -527,7 +765,7 @@ const SSTVisits = () => {
                                             </div>
                                         </td>
                                         <td className="border-0 py-3 align-middle">
-                                            <span className="text-muted small fw-bold">{emp.department}</span>
+                                            <span className="text-muted small fw-bold">{emp.department || '-'}</span>
                                         </td>
                                         <td className="border-0 py-3 align-middle">
                                             <Badge style={{
@@ -543,6 +781,7 @@ const SSTVisits = () => {
                                                                 '#475569',
                                                 border: 'none',
                                                 padding: '6px 14px',
+                                                color:'white',
                                                 fontSize: '11px',
                                                 fontWeight: 700,
                                                 letterSpacing: '0.3px'
@@ -586,6 +825,7 @@ const SSTVisits = () => {
             </div>
         </div>
     );
+    };
 
     return (
         <ThemeProvider theme={createTheme()}>

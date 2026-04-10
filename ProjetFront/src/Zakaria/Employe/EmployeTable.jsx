@@ -49,6 +49,8 @@ const EmployeTable = forwardRef((props, ref) => {
       num_badge: true,
       nom: true,
       prenom: true,
+      departement: true,
+      service: true,
       contrat: true,
       lieu_naiss: true,
       date_naiss: true,
@@ -265,6 +267,8 @@ const EmployeTable = forwardRef((props, ref) => {
     { key: "num_badge", label: "Num Badge" },
     { key: "nom", label: "Nom" },
     { key: "prenom", label: "Prenom" },
+    { key: "departement", label: "Département" },
+    { key: "service", label: "Service" },
     {
       key: "contrat",
       label: "Contrat",
@@ -329,6 +333,36 @@ const EmployeTable = forwardRef((props, ref) => {
   const visibleColumns = useMemo(() => {
     return allColumns.filter(col => columnVisibility[col.key]);
   }, [allColumns, columnVisibility]);
+
+  const flattenedDepartements = useMemo(() => {
+    const flatten = (items = [], parentChain = []) => {
+      return items.flatMap((item) => {
+        const currentChain = [...parentChain, item];
+        const children = Array.isArray(item.children) ? item.children : [];
+        return [currentChain, ...flatten(children, currentChain)];
+      });
+    };
+
+    return flatten(departements || []);
+  }, [departements]);
+
+  const normalizedEmployees = useMemo(() => {
+    const hierarchyById = new Map(
+      flattenedDepartements.map((chain) => [chain[chain.length - 1]?.id, chain])
+    );
+
+    return employeesWithContracts.map((employee) => {
+      const relatedDepartmentId =
+        employee?.departements?.[0]?.id || employee?.departement_id || null;
+      const hierarchy = relatedDepartmentId ? hierarchyById.get(relatedDepartmentId) || [] : [];
+
+      return {
+        ...employee,
+        departement: hierarchy[0]?.nom || employee.departement || '',
+        service: hierarchy[1]?.nom || employee.service || '',
+      };
+    });
+  }, [employeesWithContracts, flattenedDepartements]);
 
   // Colonnes pour les contrats
 
@@ -483,7 +517,7 @@ const EmployeTable = forwardRef((props, ref) => {
   const filteredEmployers = useMemo(() => {
 
     let result = includeSubDepartments
-      ? employeesWithContracts.filter((emp) => {
+      ? normalizedEmployees.filter((emp) => {
         const subIds = getSubDepartmentIds(departements, departementId);
 
         return (
@@ -493,7 +527,7 @@ const EmployeTable = forwardRef((props, ref) => {
           subIds.includes(emp.departement_id)
         );
       })
-      : employeesWithContracts.filter((emp) => {
+      : normalizedEmployees.filter((emp) => {
         return (
           (emp.departements &&
             emp.departements.length > 0 &&
@@ -526,7 +560,7 @@ const EmployeTable = forwardRef((props, ref) => {
 
     return result;
   }, [
-    employeesWithContracts,
+    normalizedEmployees,
     departementId,
     includeSubDepartments,
     getSubDepartmentIds,
@@ -553,14 +587,17 @@ const EmployeTable = forwardRef((props, ref) => {
 
   useEffect(() => {
     const savedColumnVisibility = localStorage.getItem('employeeColumnVisibility');
+    const defaultVisibility = {};
+    allColumns.forEach(col => {
+      defaultVisibility[col.key] = true;
+    });
 
     if (savedColumnVisibility) {
-      setColumnVisibility(JSON.parse(savedColumnVisibility));
+      const parsedVisibility = JSON.parse(savedColumnVisibility);
+      const mergedVisibility = { ...defaultVisibility, ...parsedVisibility };
+      setColumnVisibility(mergedVisibility);
+      localStorage.setItem('employeeColumnVisibility', JSON.stringify(mergedVisibility));
     } else {
-      const defaultVisibility = {};
-      allColumns.forEach(col => {
-        defaultVisibility[col.key] = true;
-      });
       setColumnVisibility(defaultVisibility);
       localStorage.setItem('employeeColumnVisibility', JSON.stringify(defaultVisibility));
     }

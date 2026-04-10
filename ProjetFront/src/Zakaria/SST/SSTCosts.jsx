@@ -178,7 +178,7 @@ const SSTCosts = () => {
         },
         {
             key: 'department',
-            label: 'Service',
+            label: 'Département',
             render: (item) => (
                 <Badge bg="light" text="muted" className="border-0 uppercase extra-small tracking-tighter fw-black">{item.department}</Badge>
             )

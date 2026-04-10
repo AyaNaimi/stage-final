@@ -203,3 +203,8 @@ table th{
 .backe{
   background-color: #2f8e6b56 !important;
 }
+
+/* Cache le checkbox affiché par erreur dans SweetAlert2 */
+.swal2-checkbox {
+  display: none !important;
+}

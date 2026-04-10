@@ -811,20 +811,33 @@ const Navigation = () => {
                   <ListItemText primary="Historique" />
                 </SubMenuItem>
 
-                <ListItem button onClick={handleSSTClick} sx={{ pl: 4, color: "white" }}>
+              </List>
+            </Collapse>
+
+            <ListItem
+              button
+              onClick={handleSSTClick}
+              sx={{ "& .MuiListItemIcon-root": { minWidth: 56 } }}
+              style={{ color: "white", display: "flex" ,}}
+            >
                   <ListItemIcon>
-                    <HeartPulse size={20} color="white" />
+                    <HeartPulse size={26} color="white" />
                   </ListItemIcon>
                   <ListItemText primary="Santé & Sécurité (SST)" />
                   {isSSTOpen ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-                </ListItem>
+            </ListItem>
 
                 <Collapse in={isSSTOpen} timeout="auto" unmountOnExit>
                   <List component="div" disablePadding>
-                    {/* Dashboard removed as per request */}
+                    <SubMenuItem button component={Link} to="/sst" sx={{ pl: 4, py: 0.4 }}>
+                      <ListItemIcon>
+                        <Activity size={16} color="white" />
+                      </ListItemIcon>
+                      <ListItemText primary="Dashboard" sx={{ '& .MuiListItemText-primary': { fontSize: '0.8rem' } }} />
+                    </SubMenuItem>
 
                     {/* SUIVI MEDICAL DROPDOWN */}
-                    <ListItem button onClick={handleSSTMedicalClick} sx={{ pl: 7, color: "white", py: 0.5 }}>
+                    <ListItem button onClick={handleSSTMedicalClick} sx={{ pl: 4, color: "white", py: 0.5 }}>
                       <ListItemIcon>
                         <Stethoscope size={18} color="white" />
                       </ListItemIcon>
@@ -834,19 +847,19 @@ const Navigation = () => {
 
                     <Collapse in={isSSTMedicalOpen} timeout="auto" unmountOnExit>
                       <List component="div" disablePadding>
-                        <SubMenuItem button component={Link} to="/sst-visites" sx={{ pl: 9, py: 0.4 }}>
+                        <SubMenuItem button component={Link} to="/sst-visites" sx={{ pl: 6, py: 0.4 }}>
                           <ListItemIcon><Calendar size={16} color="white" /></ListItemIcon>
                           <ListItemText primary="Visites Médicales" sx={{ '& .MuiListItemText-primary': { fontSize: '0.8rem' } }} />
                         </SubMenuItem>
-                        <SubMenuItem button component={Link} to="/sst-dossiers" sx={{ pl: 9, py: 0.4 }}>
+                        <SubMenuItem button component={Link} to="/sst-dossiers" sx={{ pl: 6, py: 0.4 }}>
                           <ListItemIcon><FileText size={16} color="white" /></ListItemIcon>
                           <ListItemText primary="Dossiers Médicaux" sx={{ '& .MuiListItemText-primary': { fontSize: '0.8rem' } }} />
                         </SubMenuItem>
-                        <SubMenuItem button component={Link} to="/sst-consultation" sx={{ pl: 9, py: 0.4 }}>
+                        <SubMenuItem button component={Link} to="/sst-consultation" sx={{ pl: 6, py: 0.4 }}>
                           <ListItemIcon><Activity size={16} color="white" /></ListItemIcon>
                           <ListItemText primary="Examen Médical" sx={{ '& .MuiListItemText-primary': { fontSize: '0.8rem' } }} />
                         </SubMenuItem>
-                        <SubMenuItem button component={Link} to="/sst-praticiens" sx={{ pl: 9, py: 0.4 }}>
+                        <SubMenuItem button component={Link} to="/sst-praticiens" sx={{ pl: 6, py: 0.4 }}>
                           <ListItemIcon><UserPlus size={16} color="white" /></ListItemIcon>
                           <ListItemText primary="Corps Médical" sx={{ '& .MuiListItemText-primary': { fontSize: '0.8rem' } }} />
                         </SubMenuItem>
@@ -854,7 +867,7 @@ const Navigation = () => {
                     </Collapse>
 
                     {/* GESTION FINANCIERE DROPDOWN */}
-                    <ListItem button onClick={handleSSTFinanceClick} sx={{ pl: 7, color: "white", py: 0.5 }}>
+                    <ListItem button onClick={handleSSTFinanceClick} sx={{ pl: 4, color: "white", py: 0.5 }}>
                       <ListItemIcon>
                         <Wallet size={18} color="white" />
                       </ListItemIcon>
@@ -864,11 +877,11 @@ const Navigation = () => {
 
                     <Collapse in={isSSTFinanceOpen} timeout="auto" unmountOnExit>
                       <List component="div" disablePadding>
-                        <SubMenuItem button component={Link} to="/sst-paiements" sx={{ pl: 9, py: 0.4 }}>
+                        <SubMenuItem button component={Link} to="/sst-paiements" sx={{ pl: 6, py: 0.4 }}>
                           <ListItemIcon><Euro size={16} color="white" /></ListItemIcon>
                           <ListItemText primary="Honoraires & Factures" sx={{ '& .MuiListItemText-primary': { fontSize: '0.8rem' } }} />
                         </SubMenuItem>
-                        <SubMenuItem button component={Link} to="/sst-couts" sx={{ pl: 9, py: 0.4 }}>
+                        <SubMenuItem button component={Link} to="/sst-couts" sx={{ pl: 6, py: 0.4 }}>
                           <ListItemIcon><TrendingUp size={16} color="white" /></ListItemIcon>
                           <ListItemText primary="Analyse des Coûts" sx={{ '& .MuiListItemText-primary': { fontSize: '0.8rem' } }} />
                         </SubMenuItem>
@@ -878,15 +891,6 @@ const Navigation = () => {
                   </List>
 
                 </Collapse>
-
-              </List>
-            </Collapse>
-
-
-
-
-
-
 
 
 

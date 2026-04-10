@@ -43,6 +43,15 @@ const SSTPatientDossierPanel = ({ employee, onClose }) => {
                         weight: exam.poids,
                         height: exam.taille
                     },
+                    tour_taille: exam.tour_taille || '-',
+                    freq_cardiaque: exam.freq_cardiaque || '-',
+                    saturation_o2: exam.saturation_o2 || '-',
+                    freq_respiratoire: exam.freq_respiratoire || '-',
+                    spirometrie: exam.spirometrie || '-',
+                    capacite_vitale: exam.capacite_vitale || '-',
+                    examen_fonctionnel: exam.examen_fonctionnel || 'Normal',
+                    examen_cardio: exam.examen_cardio || 'Normal',
+                    examen_respiratoire: exam.examen_respiratoire || 'Normal',
                     notes: {
                         subjective: exam.notes_subjectives || 'Aucune note',
                         assessment: exam.evaluation || 'Aucune évaluation'
@@ -299,19 +308,21 @@ const SSTPatientDossierPanel = ({ employee, onClose }) => {
                                         <th>Date</th>
                                         <th>Poids (kg)</th>
                                         <th>Taille (cm)</th>
+                                        <th>Tour de taille (cm)</th>
                                         <th>IMC</th>
                                         <th>Statut</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {visitHistory.length === 0 ? (
-                                        <tr><td colSpan="5" className="text-center p-3 text-muted">Aucune donnée</td></tr>
+                                        <tr><td colSpan="6" className="text-center p-3 text-muted">Aucune donnée</td></tr>
                                     ) : (
                                         visitHistory.map(visit => (
                                             <tr key={visit.id} className="border-bottom">
                                                 <td className="fw-bold">{visit.date}</td>
                                                 <td>{visit.biometrics.weight || '-'}</td>
                                                 <td>{visit.biometrics.height || '-'}</td>
+                                                <td>{visit.tour_taille || '-'}</td>
                                                 <td className="fw-black">{visit.biometrics.imc}</td>
                                                 <td className={`fw-black ${getBMIInterpretation(visit.biometrics.imc).color}`} style={{ fontSize: '0.55rem' }}>{getBMIInterpretation(visit.biometrics.imc).text}</td>
                                             </tr>
@@ -322,30 +333,112 @@ const SSTPatientDossierPanel = ({ employee, onClose }) => {
                         </div>
 
                         <div className="form-section-title">
-                            <HeartPulse size={14} /> Paramètres Cardiaques
+                            <HeartPulse size={14} /> Paramètres Cardiaques & Vasculaires
                         </div>
-                        <table className="table table-borderless table-sm extra-small align-middle">
+                        <table className="table table-borderless table-sm extra-small align-middle mb-4">
                             <thead>
                                 <tr className="border-bottom text-muted uppercase fw-bold" style={{ fontSize: '0.6rem' }}>
                                     <th>Date</th>
-                                    <th>Tension (TA)</th>
+                                    <th>Tension (TA) mmHg</th>
                                     <th>Pouls (bpm)</th>
+                                    <th>Fréquence cardiaqe</th>
+                                    <th>Saturation O2 (%)</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {visitHistory.length === 0 ? (
-                                    <tr><td colSpan="3" className="text-center p-3 text-muted">Aucune donnée</td></tr>
+                                    <tr><td colSpan="5" className="text-center p-3 text-muted">Aucune donnée</td></tr>
                                 ) : (
                                     visitHistory.map(visit => (
                                         <tr key={visit.id} className="border-bottom">
                                             <td className="fw-bold">{visit.date}</td>
                                             <td className="fw-black text-primary">{visit.biometrics.bp}</td>
                                             <td className="fw-black text-primary">{visit.biometrics.pulse}</td>
+                                            <td>{visit.freq_cardiaque || '-'}</td>
+                                            <td>{visit.saturation_o2 || '-'}</td>
                                         </tr>
                                     ))
                                 )}
                             </tbody>
                         </table>
+
+                        <div className="form-section-title">
+                            <Activity size={14} /> Constantes Respiratoires
+                        </div>
+                        <table className="table table-borderless table-sm extra-small align-middle">
+                            <thead>
+                                <tr className="border-bottom text-muted uppercase fw-bold" style={{ fontSize: '0.6rem' }}>
+                                    <th>Date</th>
+                                    <th>Fréquence respiratoire</th>
+                                    <th>Spirométrie</th>
+                                    <th>Capacité vitale</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {visitHistory.length === 0 ? (
+                                    <tr><td colSpan="4" className="text-center p-3 text-muted">Aucune donnée</td></tr>
+                                ) : (
+                                    visitHistory.map(visit => (
+                                        <tr key={visit.id} className="border-bottom">
+                                            <td className="fw-bold">{visit.date}</td>
+                                            <td>{visit.freq_respiratoire || '-'}</td>
+                                            <td>{visit.spirometrie || '-'}</td>
+                                            <td>{visit.capacite_vitale || '-'}</td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </Tab>
+                    
+                    <Tab eventKey="clinical" title="Clinique" className="p-4">
+                        <div className="form-section-title">
+                            <FileText size={14} /> Examen Clinique
+                        </div>
+                        {visitHistory.length === 0 ? (
+                            <div className="text-center p-4 extra-small fw-bold text-muted">AUCUN EXAMEN ENREGISTRÉ</div>
+                        ) : (
+                            visitHistory.map(visit => (
+                                <div key={visit.id} className="mb-4 p-3 bg-light rounded-4">
+                                    <div className="d-flex justify-content-between align-items-center mb-3">
+                                        <span className="fw-black text-primary">{visit.date}</span>
+                                        <Badge bg="info" className="extra-small">{visit.type}</Badge>
+                                    </div>
+                                    <Row className="g-2 mb-3">
+                                        <Col md={6}>
+                                            <div className="p-2 bg-white rounded-3 border">
+                                                <div className="extra-small text-muted fw-bold">Observations générales</div>
+                                                <div className="extra-small">{visit.notes?.subjective || 'Aucune observation'}</div>
+                                            </div>
+                                        </Col>
+                                        <Col md={6}>
+                                            <div className="p-2 bg-white rounded-3 border">
+                                                <div className="extra-small text-muted fw-bold">Examen fonctionnel</div>
+                                                <div className="extra-small">{visit.examen_fonctionnel || 'Normal'}</div>
+                                            </div>
+                                        </Col>
+                                    </Row>
+                                    <Row className="g-2">
+                                        <Col md={6}>
+                                            <div className="p-2 bg-white rounded-3 border">
+                                                <div className="extra-small text-muted fw-bold">Examen cardio-vasculaire</div>
+                                                <div className="extra-small">{visit.examen_cardio || 'Normal'}</div>
+                                            </div>
+                                        </Col>
+                                        <Col md={6}>
+                                            <div className="p-2 bg-white rounded-3 border">
+                                                <div className="extra-small text-muted fw-bold">Examen respiratoire</div>
+                                                <div className="extra-small">{visit.examen_respiratoire || 'Normal'}</div>
+                                            </div>
+                                        </Col>
+                                    </Row>
+                                    <div className="mt-3 p-2 bg-white rounded-3 border">
+                                        <div className="extra-small text-muted fw-bold">Conclusion / Recommandations</div>
+                                        <div className="extra-small">{visit.notes?.assessment || 'Aucune'}</div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
                     </Tab>
                 </Tabs>
             </div>

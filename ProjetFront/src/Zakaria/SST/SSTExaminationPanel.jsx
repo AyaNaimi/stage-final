@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Card, Form, Button, Alert, Spinner, Row, Col } from 'react-bootstrap';
 import { Activity, Stethoscope, FileText, CheckCircle, AlertCircle, Clock, Scale, Eye, Heart, Thermometer, Droplets, Ear, AlertTriangle, XCircle, Pill, ClipboardList, Hospital } from 'lucide-react';
@@ -86,8 +86,27 @@ const SSTExaminationPanel = ({ employee, onValidate, onCancel }) => {
         return { text: 'Obésité massive (classe III)', color: 'text-danger' };
     };
 
-    const bmiValue = (parseFloat(examData.biometrics.weight) / ((parseFloat(examData.biometrics.height) / 100) ** 2)).toFixed(1);
+    let bmiValue = 'NaN';
+    const parsedWeight = parseFloat(examData.biometrics.weight);
+    const parsedHeight = parseFloat(examData.biometrics.height);
+    if (!isNaN(parsedWeight) && !isNaN(parsedHeight) && parsedHeight > 0) {
+        bmiValue = (parsedWeight / ((parsedHeight / 100) ** 2)).toFixed(1);
+    }
     const bmiInterp = getBMIInterpretation(bmiValue);
+
+    useEffect(() => {
+        if (bmiValue !== 'NaN' && examData.biometrics.bmi !== bmiValue) {
+            setExamData(prev => ({
+                ...prev,
+                biometrics: { ...prev.biometrics, bmi: bmiValue }
+            }));
+        } else if (bmiValue === 'NaN' && examData.biometrics.bmi !== '') {
+             setExamData(prev => ({
+                ...prev,
+                biometrics: { ...prev.biometrics, bmi: '' }
+            }));
+        }
+    }, [bmiValue, examData.biometrics.bmi]);
 
     return (
         <Card className="sst-form-container">

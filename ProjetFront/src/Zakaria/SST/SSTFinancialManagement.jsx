@@ -278,7 +278,7 @@ const SSTFinancialManagement = () => {
         },
         { key: 'contract', label: 'Type de contrat' },
         { key: 'payment', label: 'Rémunération' },
-        { key: 'service', label: 'Affectation' },
+        { key: 'service', label: 'Département' },
 
         {
             key: 'actions_custom',
@@ -681,7 +681,7 @@ const SSTFinancialManagement = () => {
                                                 </Form.Select>
                                             </Form.Group>
                                             <Form.Group className="mb-3">
-                                                <Form.Label className="small fw-bold">Affectation / Service</Form.Label>
+                                                <Form.Label className="small fw-bold">Affectation / Département</Form.Label>
                                                 <Form.Control
                                                     type="text"
                                                     value={formData.service}

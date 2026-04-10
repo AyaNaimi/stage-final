@@ -181,6 +181,11 @@ const SSTMedicalRecords = React.forwardRef(({
         setFilteredData(filtered);
     }, [searchQuery, medicalRecords, mainFilters, visitId]);
 
+    const departmentOptions = useMemo(() => {
+        return Array.from(new Set(medicalRecords.map(record => record.dept).filter(Boolean)))
+            .map((dept) => ({ label: dept, value: dept }));
+    }, [medicalRecords]);
+
     const handleSelectAllChange = (e) => {
         const checked = e.target.checked;
         setSelectAll(checked);
@@ -523,14 +528,11 @@ const SSTMedicalRecords = React.forwardRef(({
                                         },
                                         {
                                             key: 'dept',
-                                            label: 'Service',
+                                            label: 'Département',
                                             value: mainFilters.dept,
                                             type: 'select',
-                                            options: [
-                                                { label: 'Production', value: 'Production' },
-                                                { label: 'Logistique', value: 'Logistique' }
-                                            ],
-                                            placeholder: 'Tous les services'
+                                            options: departmentOptions,
+                                            placeholder: 'Tous les départements'
                                         },
                                         {
                                             key: 'status',
@@ -615,7 +617,6 @@ const SSTMedicalRecords = React.forwardRef(({
                         selectAll={selectAll}
                         handleSelectAllChange={handleSelectAllChange}
                         handleCheckboxChange={handleCheckboxChange}
-                        handleEdit={(item) => setSelectedRecord(item)}
                         handleDelete={handleDeleteRecord}
                         rowsPerPage={rowsPerPage}
                         page={currentPage}
@@ -638,102 +639,220 @@ const SSTMedicalRecords = React.forwardRef(({
                     isOpen={!!selectedRecord}
                     onClose={() => setSelectedRecord(null)}
                     title={`Dossier : ${selectedRecord.name}`}
-                    defaultWidth={40}
+                    defaultWidth={45}
                     displayMode="inline"
                 >
-                    <div className="p-3">
-                        <div className="d-flex align-items-center gap-4 mb-4 bg-light p-4 rounded-4 shadow-sm border">
-                            <div className="bg-white p-1 rounded-circle shadow-sm overflow-hidden" style={{ width: '80px', height: '80px' }}>
-                                {selectedRecord.photo ? (
-                                    <img
-                                        src={resolveFileUrl(selectedRecord.photo)}
-                                        alt=""
-                                        className="w-100 h-100 object-fit-cover rounded-circle"
-                                    />
-                                ) : (
-                                    <div className="w-100 h-100 d-flex align-items-center justify-content-center bg-light text-primary">
-                                        <User size={40} />
-                                    </div>
-                                )}
+                    <div className="p-4" style={{ backgroundColor: '#f8fafc', minHeight: '100%' }}>
+                        {/* Header Profile Card */}
+                        <div className="d-flex align-items-center gap-4 mb-4 bg-white p-4 rounded-4 shadow-sm border-0" style={{ outline: '1px solid #e2e8f0' }}>
+                            <div className="position-relative">
+                                <div className="bg-light p-1 rounded-circle overflow-hidden d-flex justify-content-center align-items-center" style={{ width: '70px', height: '70px', border: '2px solid #fff', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}>
+                                    {selectedRecord.photo ? (
+                                        <img src={resolveFileUrl(selectedRecord.photo)} alt="" className="w-100 h-100 object-fit-cover rounded-circle" />
+                                    ) : (
+                                        <User size={32} className="text-secondary" />
+                                    )}
+                                </div>
+                                <div className="position-absolute bottom-0 end-0 rounded-circle" style={{ width: '16px', height: '16px', backgroundColor: selectedRecord.status === 'Apte' ? '#10b981' : '#f59e0b', border: '3px solid #fff' }}></div>
                             </div>
-                            <div>
-                                <h4 className="fw-black mb-1 letter-spacing-tight">{selectedRecord.name}</h4>
-                                <div className="d-flex align-items-center gap-2">
-                                    <Badge bg={selectedRecord.status === 'Apte' ? 'success' : 'warning'} className="px-3 py-1 rounded-pill uppercase extra-small tracking-wider">
-                                        {selectedRecord.status}
+                            <div className="flex-grow-1">
+                                <div className="d-flex justify-content-between align-items-start mb-1">
+                                    <h5 className="fw-black text-dark mb-0 letter-spacing-tight">{selectedRecord.name}</h5>
+                                    <Badge bg="light" text="secondary" className="border px-2 py-1 uppercase extra-small tracking-wider rounded-3">
+                                        ID: {selectedRecord.id}
                                     </Badge>
-                                    <span className="extra-small text-muted fw-bold">ID: {selectedRecord.id}</span>
+                                </div>
+                                <div className="d-flex align-items-center gap-2 mt-2">
+                                    <Badge bg={selectedRecord.status === 'Apte' ? 'success' : 'warning'} className="bg-opacity-10 text-dark border-0 px-3 py-1 rounded-pill uppercase extra-small">
+                                        <span className={`fw-bold ${selectedRecord.status === 'Apte' ? 'text-success' : 'text-warning'}`}>{selectedRecord.status}</span>
+                                    </Badge>
+                                    <span className="small text-muted fw-medium">•</span>
+                                    <span className="small text-muted fw-medium">{selectedRecord.dept}</span>
                                 </div>
                             </div>
                         </div>
 
-                        <Tabs defaultActiveKey="synthesis" className="custom-tabs-sst">
-                            <Tab eventKey="synthesis" title="Synthèse" className="pt-3">
-                                <Row className="g-3 mb-4">
-                                    <Col md={12}>
-                                        <Card className="border-0 bg-light p-3 rounded-4">
-                                            <div className="d-flex justify-content-between mb-2">
-                                                <span className="extra-small fw-black uppercase">Constantes</span>
-                                                <Stethoscope size={14} className="text-primary" />
-                                            </div>
-                                            <div className="d-flex flex-column gap-2">
-                                                <div className="d-flex justify-content-between small">
-                                                    <span>IMC</span>
-                                                    <span className="fw-black">{selectedRecord.vitals.bmi}</span>
+                        <Tabs defaultActiveKey="synthesis" className="custom-tabs-sst mb-4">
+                            <Tab eventKey="synthesis" title="Synthèse Clinique" className="pt-4">
+                                {/* Vitals Grid */}
+                                <div className="mb-4">
+                                    <h6 className="fw-black uppercase text-muted mb-3 d-flex align-items-center gap-2" style={{ fontSize: '0.75rem', letterSpacing: '0.05em' }}>
+                                        <Activity size={14} /> Constantes Vitales
+                                    </h6>
+                                    <Row className="g-3">
+                                        <Col xs={6} md={3}>
+                                            <div className="p-3 bg-white rounded-4 border-0 shadow-sm text-center h-100 transition-all hover-lift">
+                                                <div className="d-flex justify-content-center mb-2">
+                                                    <div className="p-2 bg-primary bg-opacity-10 text-primary rounded-circle">
+                                                        <Scale size={16} />
+                                                    </div>
                                                 </div>
-                                                <div className="d-flex justify-content-between small">
-                                                    <span>Tension</span>
-                                                    <span className="fw-black">{selectedRecord.vitals.bp}</span>
+                                                <div className="extra-small text-muted fw-bold mb-1">IMC</div>
+                                                <div className="fw-black text-dark fs-5">{selectedRecord.vitals.bmi || '-'}</div>
+                                            </div>
+                                        </Col>
+                                        <Col xs={6} md={3}>
+                                            <div className="p-3 bg-white rounded-4 border-0 shadow-sm text-center h-100 transition-all hover-lift">
+                                                <div className="d-flex justify-content-center mb-2">
+                                                    <div className="p-2 bg-info bg-opacity-10 text-info rounded-circle">
+                                                        <User size={16} />
+                                                    </div>
+                                                </div>
+                                                <div className="extra-small text-muted fw-bold mb-1">Poids</div>
+                                                <div className="fw-black text-dark fs-5">{selectedRecord.vitals.weight || '-'} <span className="extra-small text-muted fw-normal">kg</span></div>
+                                            </div>
+                                        </Col>
+                                        <Col xs={6} md={3}>
+                                            <div className="p-3 bg-white rounded-4 border-0 shadow-sm text-center h-100 transition-all hover-lift">
+                                                <div className="d-flex justify-content-center mb-2">
+                                                    <div className="p-2 bg-secondary bg-opacity-10 text-secondary rounded-circle">
+                                                        <Scale size={16} />
+                                                    </div>
+                                                </div>
+                                                <div className="extra-small text-muted fw-bold mb-1">Taille</div>
+                                                <div className="fw-black text-dark fs-5">{selectedRecord.vitals.height || '-'} <span className="extra-small text-muted fw-normal">cm</span></div>
+                                            </div>
+                                        </Col>
+                                        <Col xs={6} md={3}>
+                                            <div className="p-3 bg-white rounded-4 border-0 shadow-sm text-center h-100 transition-all hover-lift">
+                                                <div className="d-flex justify-content-center mb-2">
+                                                    <div className="p-2 bg-danger bg-opacity-10 text-danger rounded-circle">
+                                                        <Heart size={16} />
+                                                    </div>
+                                                </div>
+                                                <div className="extra-small text-muted fw-bold mb-1">Tension</div>
+                                                <div className="fw-black text-dark fs-5">{selectedRecord.vitals.bp || '-'}</div>
+                                            </div>
+                                        </Col>
+                                    </Row>
+                                    <Row className="g-3 mt-1">
+                                        <Col xs={6} md={4}>
+                                            <div className="p-3 bg-white rounded-4 border-0 shadow-sm d-flex align-items-center gap-3 transition-all hover-lift">
+                                                <div className="p-2 bg-danger bg-opacity-10 text-danger rounded-3"><Heart size={18} /></div>
+                                                <div>
+                                                    <div className="extra-small text-muted fw-bold">Pouls</div>
+                                                    <div className="fw-black text-dark">{selectedRecord.vitals.pulse || '-'} <span className="extra-small text-muted fw-normal">bpm</span></div>
                                                 </div>
                                             </div>
-                                        </Card>
-                                    </Col>
-                                </Row>
+                                        </Col>
+                                        <Col xs={6} md={4}>
+                                            <div className="p-3 bg-white rounded-4 border-0 shadow-sm d-flex align-items-center gap-3 transition-all hover-lift">
+                                                <div className="p-2 bg-primary bg-opacity-10 text-primary rounded-3"><Activity size={18} /></div>
+                                                <div>
+                                                    <div className="extra-small text-muted fw-bold">SpO2</div>
+                                                    <div className="fw-black text-dark">{selectedRecord.vitals.spo2 || '-'} <span className="extra-small text-muted fw-normal">%</span></div>
+                                                </div>
+                                            </div>
+                                        </Col>
+                                        <Col xs={6} md={4}>
+                                            <div className="p-3 bg-white rounded-4 border-0 shadow-sm d-flex align-items-center gap-3 transition-all hover-lift">
+                                                <div className="p-2 bg-warning bg-opacity-10 text-warning rounded-3"><AlertCircle size={18} /></div>
+                                                <div>
+                                                    <div className="extra-small text-muted fw-bold">Temp.</div>
+                                                    <div className="fw-black text-dark">{selectedRecord.vitals.temperature || '-'} <span className="extra-small text-muted fw-normal">°C</span></div>
+                                                </div>
+                                            </div>
+                                        </Col>
+                                    </Row>
+                                </div>
                             </Tab>
-                            <Tab eventKey="history" title="Historique" className="pt-3">
-                                {selectedRecord.history.map((h, idx) => (
-                                    <div key={idx} className="border-bottom p-3">
-                                        <div className="d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <div className="fw-bold small">{h.date}</div>
-                                                <div className="extra-small text-muted">{h.type}</div>
+                            <Tab eventKey="history" title="Historique" className="pt-4">
+                                <h6 className="fw-black uppercase text-muted mb-4 d-flex align-items-center gap-2" style={{ fontSize: '0.75rem', letterSpacing: '0.05em' }}>
+                                    <Stethoscope size={14} /> Parcours Médical
+                                </h6>
+                                <div className="position-relative ms-2">
+                                    <div className="position-absolute top-0 bottom-0 start-0 border-start border-2 border-light ms-2" style={{ transform: 'translateX(-50%)' }}></div>
+                                    {selectedRecord.history.map((h, idx) => (
+                                        <div key={idx} className="position-relative mb-4 ps-4">
+                                            <div className="position-absolute start-0 top-0 bg-white border border-primary rounded-circle z-1" style={{ width: '12px', height: '12px', transform: 'translateX(-50%) translateY(6px)' }}></div>
+                                            
+                                            <div 
+                                                className="bg-white p-3 rounded-4 shadow-sm border-0 transition-all hover-lift" 
+                                                style={{ cursor: 'pointer', border: '1px solid #f1f5f9' }}
+                                                onClick={() => toggleHistoryItem(idx)}
+                                            >
+                                                <div className="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <div className="d-flex align-items-center gap-2 mb-1">
+                                                            <div className="fw-bold text-dark small">{h.date}</div>
+                                                            <Badge bg="light" text="primary" className="extra-small border-0 px-2 fw-medium">{h.type}</Badge>
+                                                        </div>
+                                                        <div className="extra-small text-muted d-flex align-items-center gap-1">
+                                                            <User size={12}/> {h.doctor || 'Médecin traitant'}
+                                                        </div>
+                                                    </div>
+                                                    <div className="p-1 rounded-circle bg-light transition-all text-muted" style={{ transform: expandedHistoryItems.includes(idx) ? 'rotate(90deg)' : 'none' }}>
+                                                        <ChevronRight size={16} />
+                                                    </div>
+                                                </div>
+                                                
+                                                <AnimatePresence>
+                                                    {expandedHistoryItems.includes(idx) && (
+                                                        <motion.div 
+                                                            initial={{ opacity: 0, height: 0 }} 
+                                                            animate={{ opacity: 1, height: 'auto' }} 
+                                                            exit={{ opacity: 0, height: 0 }}
+                                                            className="overflow-hidden mt-3 pt-3 border-top border-light"
+                                                        >
+                                                            <div className="d-flex flex-column gap-2">
+                                                                {h.diagnosis && (
+                                                                    <div>
+                                                                        <div className="extra-small fw-black text-muted uppercase mb-1">Diagnostic</div>
+                                                                        <div className="small text-dark p-2 bg-light rounded-3">{h.diagnosis}</div>
+                                                                    </div>
+                                                                )}
+                                                                {h.note && (
+                                                                    <div>
+                                                                        <div className="extra-small fw-black text-muted uppercase mb-1">Observation</div>
+                                                                        <div className="small text-dark p-2 bg-light rounded-3 fst-italic text-muted">{h.note}</div>
+                                                                    </div>
+                                                                )}
+                                                                {!h.diagnosis && !h.note && (
+                                                                    <div className="extra-small text-muted fst-italic">Aucune note détaillée</div>
+                                                                )}
+                                                            </div>
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
                                             </div>
-                                            <Button variant="light" size="sm" onClick={() => toggleHistoryItem(idx)}>
-                                                <ChevronRight size={16} style={{ transform: expandedHistoryItems.includes(idx) ? 'rotate(90deg)' : 'none' }} />
-                                            </Button>
                                         </div>
-                                        {expandedHistoryItems.includes(idx) && (
-                                            <div className="mt-2 p-3 bg-light rounded shadow-sm small">
-                                                <div className="fw-bold mb-1">Diagnostic:</div>
-                                                <div>{h.diagnosis}</div>
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
+                                    ))}
+                                    {(!selectedRecord.history || selectedRecord.history.length === 0) && (
+                                        <div className="ps-4 text-center py-4">
+                                            <p className="extra-small text-muted fw-bold">AUCUN HISTORIQUE DISPONIBLE</p>
+                                        </div>
+                                    )}
+                                </div>
                             </Tab>
-                            <Tab eventKey="documents" title="Documents" className="pt-3">
+                            <Tab eventKey="documents" title="Documents" className="pt-4">
+                                <h6 className="fw-black uppercase text-muted mb-3 d-flex align-items-center gap-2" style={{ fontSize: '0.75rem', letterSpacing: '0.05em' }}>
+                                    <FileText size={14} /> Fichiers Rattachés
+                                </h6>
                                 {(!selectedRecord.documents || selectedRecord.documents.length === 0) ? (
-                                    <div className="text-center p-5 bg-white rounded-4 border border-dashed mt-2">
-                                        <FileText size={48} className="text-muted opacity-25 mb-3" />
-                                        <p className="text-muted small">Aucun document numérisé pour ce collaborateur</p>
+                                    <div className="text-center p-5 bg-white rounded-4 border-0 shadow-sm mt-3 d-flex flex-column align-items-center justify-content-center">
+                                        <div className="p-3 bg-light rounded-circle mb-3">
+                                            <FileText size={32} className="text-muted opacity-50" />
+                                        </div>
+                                        <p className="text-muted small fw-bold mb-0">Aucun document numérisé</p>
+                                        <p className="extra-small text-muted mt-1">Les documents associés au collaborateur s'afficheront ici.</p>
                                     </div>
                                 ) : (
                                     <div className="d-flex flex-column gap-2 mt-2">
                                         {selectedRecord.documents.map((doc, idx) => (
-                                            <div key={idx} className="p-3 bg-white border rounded-4 d-flex align-items-center justify-content-between hover-shadow transition-all">
+                                            <div key={idx} className="p-3 bg-white rounded-4 shadow-sm d-flex align-items-center justify-content-between transition-all hover-lift" style={{ border: '1px solid #f8fafc' }}>
                                                 <div className="d-flex align-items-center gap-3">
-                                                    <div className="p-2 bg-info bg-opacity-10 rounded-3 text-info">
+                                                    <div className="p-2 bg-primary bg-opacity-10 rounded-3 text-primary">
                                                         <FileText size={20} />
                                                     </div>
                                                     <div>
-                                                        <div className="fw-bold small">{doc.nom}</div>
-                                                        <div className="extra-small text-muted">{doc.type} • {doc.date_document}</div>
+                                                        <div className="fw-bold small text-dark">{doc.nom}</div>
+                                                        <div className="extra-small text-muted">{doc.type || 'Document'} • {doc.date_document || '-'}</div>
                                                     </div>
                                                 </div>
                                                 <Button
                                                     variant="light"
                                                     size="sm"
-                                                    className="rounded-circle p-2"
+                                                    className="rounded-circle p-2 text-primary bg-primary bg-opacity-10 border-0 hover-bg-primary hover-text-white transition-all"
                                                     onClick={() => window.open(resolveFileUrl(doc.chemin_fichier), '_blank')}
                                                 >
                                                     <Download size={16} />
@@ -785,8 +904,11 @@ const SSTMedicalRecords = React.forwardRef(({
                 .scrollbar-teal::-webkit-scrollbar { width: 5px; }
                 .scrollbar-teal::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
                 .scrollbar-teal::-webkit-scrollbar-thumb { background: #3a8a90; border-radius: 10px; }
+
+                            .hover-lift { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+                .hover-lift:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important; }
                 `}
-            </style>
+                </style>
         </div >
     );
 });
